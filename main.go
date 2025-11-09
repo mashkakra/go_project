@@ -28,7 +28,7 @@ func Testt(t *testing.T) {
 		test := test
 		got, err := GetUTFLength(test.in)
 		if got != test.exp && err != test.err {
-			t.Errorf("")
+			t.Errorf("r")
 		}
 	}
 }
