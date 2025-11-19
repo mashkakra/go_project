@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Запись на занятие</title>
+</head>
+<body>
+    <h1>Запись на занятие</h1>
+
+    <!-- Шаг 1: Выбор класса -->
+    <div id="step1">
+        <h2>Шаг 1: Выберите ваш класс</h2>
+        <select id="classSelect" onchange="showSubjects()">
+            <option value="">-- Выберите класс --</option>
+            <option value="1-4">1-4 класс</option>
+            <option value="5-7">5-7 класс</option>
+            <option value="8-9">8-9 класс</option>
+            <option value="10-11">10-11 класс</option>
+        </select>
+    </div>
+
+    <!-- Шаг 2: Выбор предмета -->
+    <div id="step2" style="display:none">
+        <h2>Шаг 2: Выберите предмет</h2>
+        <select id="subjectSelect" onchange="showTeachers()">
+            <option value="">-- Выберите предмет --</option>
+        </select>
+    </div>
+
+    <!-- Шаг 3: Выбор преподавателя -->
+    <div id="step3" style="display:none">
+        <h2>Шаг 3: Выберите преподавателя</h2>
+        <div id="teachersList"></div>
+    </div>
+
+    <!-- Шаг 4: Контактные данные -->
+    <div id="step4" style="display:none">
+        <h2>Шаг 4: Ваши контактные данные</h2>
+        
+        <h3>Имя:</h3>
+        <input type="text" id="studentName">
+        
+        <h3>Телефон:</h3>
+        <input type="tel" id="studentPhone">
+        
+        <h3>Email:</h3>
+        <input type="email" id="studentEmail">
+        
+        <br><br>
+        <button onclick="submitApplication()">Завершить запись</button>
+    </div>
+
+    <br>
+    <a href="/">
+        <button>Вернуться на главную</button>
+    </a>
+
+    <script>
+        // Данные о предметах по классам
+        const subjectsByClass = {
+            "1-4": ["Математика", "Русский язык", "Английский язык", "Окружающий мир"],
+            "5-7": ["Математика", "Русский язык", "Английский язык", "История", "Биология"],
+            "8-9": ["Алгебра", "Геометрия", "Русский язык", "Английский язык", "Физика", "Химия", "История", "Обществознание"],
+            "10-11": ["Математика", "Русский язык", "Английский язык", "Физика", "Химия", "Биология", "История", "Обществознание", "Информатика"]
+        };
+
+        // Данные о преподавателях
+        const teachers = {
+            "Математика": [
+                {name: "Иванова Мария Петровна", price: "1500 руб/час", schedule: "Пн, Ср, Пт: 15:00-18:00"},
+                {name: "Петров Алексей Сергеевич", price: "1200 руб/час", schedule: "Вт, Чт: 16:00-19:00"}
+            ],
+            "Русский язык": [
+                {name: "Сидорова Анна Владимировна", price: "1400 руб/час", schedule: "Пн-Пт: 14:00-17:00"},
+                {name: "Кузнецова Ольга Ивановна", price: "1300 руб/час", schedule: "Вт, Чт, Сб: 10:00-13:00"}
+            ],
+            "Английский язык": [
+                {name: "Смирнов Дмитрий Алексеевич", price: "1600 руб/час", schedule: "Пн, Ср, Пт: 16:00-20:00"},
+                {name: "Попова Елена Викторовна", price: "1700 руб/час", schedule: "Вт, Чт: 15:00-18:00"}
+            ],
+            "Физика": [
+                {name: "Николаев Сергей Петрович", price: "1800 руб/час", schedule: "Пн, Ср: 17:00-19:00"}
+            ],
+            "Химия": [
+                {name: "Фролова Татьяна Михайловна", price: "1700 руб/час", schedule: "Вт, Чт: 18:00-20:00"}
+            ]
+        };
+
+        function showSubjects() {
+            const classSelect = document.getElementById('classSelect');
+            const subjectSelect = document.getElementById('subjectSelect');
+            const step2 = document.getElementById('step2');
+            
+            if (classSelect.value) {
+                // Очищаем предыдущие предметы
+                subjectSelect.innerHTML = '<option value="">-- Выберите предмет --</option>';
+                
+                // Добавляем предметы для выбранного класса
+                subjectsByClass[classSelect.value].forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = subject;
+                    option.textContent = subject;
+                    subjectSelect.appendChild(option);
+                });
+                
+                // Показываем шаг 2
+                step2.style.display = 'block';
+            }
+        }
+
+        function showTeachers() {
+            const subjectSelect = document.getElementById('subjectSelect');
+            const teachersList = document.getElementById('teachersList');
+            const step3 = document.getElementById('step3');
+            
+            if (subjectSelect.value) {
+                teachersList.innerHTML = '';
+                
+                const subjectTeachers = teachers[subjectSelect.value] || [];
+                
+                if (subjectTeachers.length > 0) {
+                    subjectTeachers.forEach((teacher, index) => {
+                        const teacherDiv = document.createElement('div');
+                        teacherDiv.style.border = '1px solid #ccc';
+                        teacherDiv.style.padding = '10px';
+                        teacherDiv.style.margin = '10px 0';
+                        
+                        teacherDiv.innerHTML = `
+                            <h3>${teacher.name}</h3>
+                            <p><strong>Стоимость:</strong> ${teacher.price}</p>
+                            <p><strong>Расписание:</strong> ${teacher.schedule}</p>
+                            <button onclick="selectTeacher('${subjectSelect.value}', ${index})">Выбрать этого преподавателя</button>
+                        `;
+                        
+                        teachersList.appendChild(teacherDiv);
+                    });
+                } else {
+                    teachersList.innerHTML = '<p>На данный момент нет доступных преподавателей по этому предмету</p>';
+                }
+                
+                // Показываем шаг 3
+                step3.style.display = 'block';
+            }
+        }
+
+        function selectTeacher(subject, teacherIndex) {
+            const selectedTeacher = teachers[subject][teacherIndex];
+            alert(`Вы выбрали: ${selectedTeacher.name}\nСтоимость: ${selectedTeacher.price}`);
+            
+            // Показываем шаг 4
+            document.getElementById('step4').style.display = 'block';
+        }
+
+        function submitApplication() {
+            const name = document.getElementById('studentName').value;
+            const phone = document.getElementById('studentPhone').value;
+            const email = document.getElementById('studentEmail').value;
+            
+            if (name && phone && email) {
+                alert('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
+                // Здесь можно добавить отправку данных на сервер
+            } else {
+                alert('Пожалуйста, заполните все контактные данные');
+            }
+        }
+    </script>
+</body>
+</html>
