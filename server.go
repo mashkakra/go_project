@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -425,6 +427,22 @@ func tutor(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getRequest() {
+	// Инициализируем подключение к БД
+	initDB()
+	defer db.Close()
+
+	// Настраиваем обработчики
+	http.HandleFunc("/", home)
+	http.HandleFunc("/fortutor/", tutor)
+	http.HandleFunc("/api/tutors", getTutorsHandler)
+	http.HandleFunc("/api/application", submitApplicationHandler)
+
+	log.Println("🚀 Сервер запущен на http://localhost:8080")
+	log.Println("🎓 Запись к репетиторам доступна по адресу: http://localhost:8080/fortutor/")
+	http.ListenAndServe(":8080", nil)
+}
+
 // Обработчик для AJAX запроса получения репетиторов
 func getTutorsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
@@ -440,10 +458,31 @@ func getTutorsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Здесь можно реализовать логику для возврата JSON с репетиторами
-	// Пока возвращаем простой ответ
+	// Конвертируем ID в int
+	subID, err := strconv.Atoi(subjectID)
+	if err != nil {
+		http.Error(w, "Неверный subject_id", http.StatusBadRequest)
+		return
+	}
+
+	gradeIDInt, err := strconv.Atoi(gradeID)
+	if err != nil {
+		http.Error(w, "Неверный grade_id", http.StatusBadRequest)
+		return
+	}
+
+	// Получаем репетиторов по предмету и классу
+	tutors, err := getTutorsBySubjectAndGrade(subID, gradeIDInt)
+	if err != nil {
+		http.Error(w, "Ошибка получения данных: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"status": "success", "message": "Данные получены"}`))
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"tutors": tutors,
+	})
 }
 
 // Обработчик для отправки заявки
@@ -453,37 +492,34 @@ func submitApplicationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tutorID := r.FormValue("tutor_id")
+	tutorIDStr := r.FormValue("tutor_id")
 	studentName := r.FormValue("student_name")
 	studentPhone := r.FormValue("student_phone")
 	studentEmail := r.FormValue("student_email")
 
-	if tutorID == "" || studentName == "" || studentPhone == "" || studentEmail == "" {
+	if tutorIDStr == "" || studentName == "" || studentPhone == "" || studentEmail == "" {
 		http.Error(w, "Все поля обязательны для заполнения", http.StatusBadRequest)
 		return
 	}
 
-	// Здесь можно добавить создание заявки в БД
-	// err := createApplication(tutorID, studentName, studentPhone, studentEmail)
+	tutorID, err := strconv.Atoi(tutorIDStr)
+	if err != nil {
+		http.Error(w, "Неверный tutor_id", http.StatusBadRequest)
+		return
+	}
+
+	// Создаем заявку в БД
+	err = createApplication(tutorID, studentName, studentPhone, studentEmail)
+	if err != nil {
+		http.Error(w, "Ошибка создания заявки: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"status": "success", "message": "Заявка отправлена успешно!"}`))
-}
-
-func getRequest() {
-	// Инициализируем подключение к БД
-	initDB()
-	defer db.Close()
-
-	// Настраиваем обработчики
-	http.HandleFunc("/", home)
-	http.HandleFunc("/fortutor/", tutor)
-	http.HandleFunc("/api/tutors", getTutorsHandler)
-	http.HandleFunc("/api/application", submitApplicationHandler)
-
-	log.Println("🚀 Сервер запущен на http://localhost:8080")
-	log.Println("🎓 Запись к репетиторам доступна по адресу: http://localhost:8080/fortutor/")
-	http.ListenAndServe(":8080", nil)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  "success",
+		"message": "Заявка отправлена успешно!",
+	})
 }
 
 func main() {

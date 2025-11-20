@@ -4,125 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Запись на занятие</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .step {
-            background: white;
-            padding: 25px;
-            margin: 20px 0;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .step h2 {
-            color: #2c3e50;
-            margin-top: 0;
-            border-bottom: 2px solid #ecf0f1;
-            padding-bottom: 10px;
-        }
-        select, input {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 2px solid #bdc3c7;
-            border-radius: 6px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        select:focus, input:focus {
-            border-color: #3498db;
-            outline: none;
-        }
-        .teacher-card {
-            border: 2px solid #ecf0f1;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 15px 0;
-            background: #f8f9fa;
-            transition: all 0.3s ease;
-        }
-        .teacher-card:hover {
-            border-color: #3498db;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .teacher-card h3 {
-            color: #2c3e50;
-            margin-top: 0;
-        }
-        .price {
-            font-size: 1.2em;
-            color: #27ae60;
-            font-weight: bold;
-        }
-        .rating {
-            color: #f39c12;
-            font-weight: bold;
-        }
-        .subjects, .grades {
-            font-size: 0.9em;
-            color: #7f8c8d;
-            margin: 5px 0;
-        }
-        .time-slots {
-            margin: 10px 0;
-        }
-        .time-slot {
-            display: inline-block;
-            background: #3498db;
-            color: white;
-            padding: 5px 10px;
-            margin: 2px;
-            border-radius: 4px;
-            font-size: 0.8em;
-        }
-        button {
-            background: #2ecc71;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background: #27ae60;
-        }
-        .back-btn {
-            background: #95a5a6;
-        }
-        .back-btn:hover {
-            background: #7f8c8d;
-        }
-        .hidden {
-            display: none;
-        }
-        .contact-form {
-            max-width: 500px;
-        }
-        .stats {
-            text-align: center;
-            margin: 20px 0;
-            color: #7f8c8d;
-        }
-    </style>
 </head>
 <body>
-    <h1>🎓 Центр репетиторов - Запись на занятие</h1>
-    
-    <div class="stats">
-        В базе данных: {{len .Subjects}} предметов, {{len .Grades}} уровней подготовки
-    </div>
+    <h1>Запись на занятие</h1>
 
     <!-- Шаг 1: Выбор класса -->
-    <div id="step1" class="step">
-        <h2>Шаг 1: Выберите ваш класс/уровень подготовки</h2>
+    <div id="step1">
+        <h2>Шаг 1: Выберите ваш класс</h2>
         <select id="classSelect" onchange="showSubjects()">
             <option value="">-- Выберите класс --</option>
             {{range .Grades}}
@@ -132,7 +20,7 @@
     </div>
 
     <!-- Шаг 2: Выбор предмета -->
-    <div id="step2" class="step hidden">
+    <div id="step2" style="display:none">
         <h2>Шаг 2: Выберите предмет</h2>
         <select id="subjectSelect" onchange="showTeachers()">
             <option value="">-- Выберите предмет --</option>
@@ -140,179 +28,188 @@
             <option value="{{.ID}}">{{.Name}}</option>
             {{end}}
         </select>
-        <button class="back-btn" onclick="backToStep1()">← Назад</button>
     </div>
 
     <!-- Шаг 3: Выбор преподавателя -->
-    <div id="step3" class="step hidden">
+    <div id="step3" style="display:none">
         <h2>Шаг 3: Выберите преподавателя</h2>
         <div id="teachersList"></div>
-        <button class="back-btn" onclick="backToStep2()">← Назад</button>
     </div>
 
     <!-- Шаг 4: Контактные данные -->
-    <div id="step4" class="step hidden">
+    <div id="step4" style="display:none">
         <h2>Шаг 4: Ваши контактные данные</h2>
-        <div class="contact-form">
-            <input type="text" id="studentName" placeholder="Ваше имя" required>
-            <input type="tel" id="studentPhone" placeholder="Ваш телефон" required>
-            <input type="email" id="studentEmail" placeholder="Ваш email" required>
-            <input type="hidden" id="selectedTutorId">
-            
-            <br><br>
-            <button onclick="submitApplication()">Отправить заявку</button>
-            <button class="back-btn" onclick="backToStep3()">← Назад</button>
-        </div>
+        
+        <h3>Имя:</h3>
+        <input type="text" id="studentName">
+        
+        <h3>Телефон:</h3>
+        <input type="tel" id="studentPhone">
+        
+        <h3>Email:</h3>
+        <input type="email" id="studentEmail">
+        
+        <input type="hidden" id="selectedTutorId">
+        
+        <br><br>
+        <button onclick="submitApplication()">Завершить запись</button>
     </div>
 
     <br>
     <a href="/">
-        <button class="back-btn">Вернуться на главную</button>
+        <button>Вернуться на главную</button>
     </a>
 
     <script>
-        // Данные из Go передаются в шаблон
-        const subjects = {{.Subjects}};
-        const grades = {{.Grades}};
-        const tutorsBySubject = {{.Tutors}};
-
-        let currentStep = 1;
+        let selectedTutor = null;
 
         function showSubjects() {
             const classSelect = document.getElementById('classSelect');
             const step2 = document.getElementById('step2');
             
             if (classSelect.value) {
-                currentStep = 2;
-                step2.classList.remove('hidden');
-                document.getElementById('step1').classList.add('hidden');
+                // Показываем шаг 2
+                step2.style.display = 'block';
+                // Сбрасываем следующие шаги
+                document.getElementById('step3').style.display = 'none';
+                document.getElementById('step4').style.display = 'none';
             }
         }
 
         function showTeachers() {
-            const subjectSelect = document.getElementById('subjectSelect');
             const classSelect = document.getElementById('classSelect');
+            const subjectSelect = document.getElementById('subjectSelect');
             const teachersList = document.getElementById('teachersList');
             const step3 = document.getElementById('step3');
             
             if (subjectSelect.value && classSelect.value) {
-                const subjectId = parseInt(subjectSelect.value);
-                const gradeId = parseInt(classSelect.value);
+                teachersList.innerHTML = '<p>Загрузка преподавателей...</p>';
                 
-                // Находим предмет по ID
-                const subject = subjects.find(s => s.id === subjectId);
-                const tutors = tutorsBySubject[subject.name] || [];
-                
-                teachersList.innerHTML = '';
-                
-                if (tutors.length > 0) {
-                    tutors.forEach(tutor => {
-                        // Проверяем, преподает ли репетитор для выбранного класса
-                        const teachesGrade = tutor.grades.some(grade => grade.id === gradeId);
-                        
-                        if (teachesGrade) {
-                            const teacherDiv = document.createElement('div');
-                            teacherDiv.className = 'teacher-card';
-                            
-                            // Форматируем расписание
-                            const scheduleHTML = tutor.time_slots && tutor.time_slots.length > 0 
-                                ? `<div class="time-slots">${tutor.time_slots.map(slot => 
-                                    `<span class="time-slot">${formatDate(slot.date)} ${slot.start_time}</span>`
-                                ).join('')}</div>`
-                                : '<p>Расписание уточняется</p>';
-                            
-                            teacherDiv.innerHTML = `
-                                <h3>${tutor.full_name}</h3>
-                                <div class="price">${tutor.hourly_rate} руб/час</div>
-                                <div class="rating">★ ${tutor.avg_rating.toFixed(1)}</div>
-                                <div class="experience">Опыт: ${tutor.experience_years} лет</div>
-                                <div class="subjects">Предметы: ${tutor.subjects.map(s => s.name).join(', ')}</div>
-                                <div class="grades">Классы: ${tutor.grades.map(g => g.grade_name).join(', ')}</div>
-                                <div class="bio">${tutor.bio}</div>
-                                ${scheduleHTML}
-                                <button onclick="selectTeacher(${tutor.id})">Выбрать этого преподавателя</button>
-                            `;
-                            
-                            teachersList.appendChild(teacherDiv);
-                        }
-                    });
-                    
-                    if (teachersList.innerHTML === '') {
-                        teachersList.innerHTML = '<p>Нет доступных преподавателей для выбранного класса и предмета</p>';
+                // Отправляем запрос к API для получения преподавателей
+                fetch('/api/tutors', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `subject_id=${subjectSelect.value}&grade_id=${classSelect.value}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        displayTeachers(data.tutors);
+                    } else {
+                        teachersList.innerHTML = '<p>Ошибка при загрузке преподавателей</p>';
                     }
-                } else {
-                    teachersList.innerHTML = '<p>На данный момент нет доступных преподавателей по этому предмету</p>';
-                }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    teachersList.innerHTML = '<p>Ошибка при загрузке преподавателей</p>';
+                });
                 
-                currentStep = 3;
-                step3.classList.remove('hidden');
-                document.getElementById('step2').classList.add('hidden');
+                // Показываем шаг 3
+                step3.style.display = 'block';
             }
         }
 
-        function selectTeacher(tutorId) {
-            document.getElementById('selectedTutorId').value = tutorId;
+        function displayTeachers(tutors) {
+            const teachersList = document.getElementById('teachersList');
             
-            currentStep = 4;
-            document.getElementById('step4').classList.remove('hidden');
-            document.getElementById('step3').classList.add('hidden');
+            if (!tutors || tutors.length === 0) {
+                teachersList.innerHTML = '<p>На данный момент нет доступных преподавателей по этому предмету</p>';
+                return;
+            }
+            
+            teachersList.innerHTML = '';
+            
+            tutors.forEach(tutor => {
+                const teacherDiv = document.createElement('div');
+                teacherDiv.style.border = '1px solid #ccc';
+                teacherDiv.style.padding = '10px';
+                teacherDiv.style.margin = '10px 0';
+                
+                // Форматируем стоимость
+                const hourlyRate = tutor.hourly_rate ? `${tutor.hourly_rate} руб/час` : 'Не указана';
+                
+                // Форматируем расписание
+                let scheduleInfo = 'Нет доступных окон';
+                if (tutor.time_slots && tutor.time_slots.length > 0) {
+                    const slots = tutor.time_slots.map(slot => {
+                        const date = new Date(slot.date).toLocaleDateString('ru-RU');
+                        return `${date} ${slot.start_time}-${slot.end_time}`;
+                    });
+                    scheduleInfo = slots.join(', ');
+                }
+                
+                teacherDiv.innerHTML = `
+                    <h3>${tutor.full_name}</h3>
+                    <p><strong>Опыт работы:</strong> ${tutor.experience_years} лет</p>
+                    <p><strong>Стоимость:</strong> ${hourlyRate}</p>
+                    <p><strong>Рейтинг:</strong> ${tutor.avg_rating ? tutor.avg_rating.toFixed(1) : 'Нет оценок'}</p>
+                    <p><strong>Биография:</strong> ${tutor.bio || 'Не указана'}</p>
+                    <p><strong>Доступные окна:</strong> ${scheduleInfo}</p>
+                    <button onclick="selectTeacher(${tutor.id}, '${tutor.full_name.replace(/'/g, "\\'")}')">Выбрать этого преподавателя</button>
+                `;
+                
+                teachersList.appendChild(teacherDiv);
+            });
         }
 
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('ru-RU');
+        function selectTeacher(tutorId, tutorName) {
+            selectedTutor = { id: tutorId, name: tutorName };
+            document.getElementById('selectedTutorId').value = tutorId;
+            alert(`Вы выбрали: ${tutorName}`);
+            
+            // Показываем шаг 4
+            document.getElementById('step4').style.display = 'block';
         }
 
-        function backToStep1() {
-            currentStep = 1;
-            document.getElementById('step1').classList.remove('hidden');
-            document.getElementById('step2').classList.add('hidden');
-        }
-
-        function backToStep2() {
-            currentStep = 2;
-            document.getElementById('step2').classList.remove('hidden');
-            document.getElementById('step3').classList.add('hidden');
-        }
-
-        function backToStep3() {
-            currentStep = 3;
-            document.getElementById('step3').classList.remove('hidden');
-            document.getElementById('step4').classList.add('hidden');
-        }
-
-        async function submitApplication() {
+        function submitApplication() {
             const name = document.getElementById('studentName').value;
             const phone = document.getElementById('studentPhone').value;
             const email = document.getElementById('studentEmail').value;
             const tutorId = document.getElementById('selectedTutorId').value;
             
             if (name && phone && email && tutorId) {
-                try {
-                    const response = await fetch('/api/application', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `tutor_id=${tutorId}&student_name=${encodeURIComponent(name)}&student_phone=${encodeURIComponent(phone)}&student_email=${encodeURIComponent(email)}`
-                    });
-                    
-                    const result = await response.json();
-                    alert(result.message);
-                    
-                    if (result.status === 'success') {
-                        // Сброс формы
-                        document.getElementById('studentName').value = '';
-                        document.getElementById('studentPhone').value = '';
-                        document.getElementById('studentEmail').value = '';
-                        backToStep1();
+                // Отправляем заявку на сервер
+                fetch('/api/application', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `tutor_id=${tutorId}&student_name=${encodeURIComponent(name)}&student_phone=${encodeURIComponent(phone)}&student_email=${encodeURIComponent(email)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
+                        // Сбрасываем форму
+                        resetForm();
+                    } else {
+                        alert('Ошибка при отправке заявки: ' + data.message);
                     }
-                } catch (error) {
-                    alert('Ошибка при отправке заявки: ' + error.message);
-                }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Ошибка при отправке заявки');
+                });
             } else {
                 alert('Пожалуйста, заполните все контактные данные');
             }
+        }
+
+        function resetForm() {
+            document.getElementById('classSelect').value = '';
+            document.getElementById('subjectSelect').value = '';
+            document.getElementById('studentName').value = '';
+            document.getElementById('studentPhone').value = '';
+            document.getElementById('studentEmail').value = '';
+            document.getElementById('selectedTutorId').value = '';
+            
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step3').style.display = 'none';
+            document.getElementById('step4').style.display = 'none';
+            
+            selectedTutor = null;
         }
     </script>
 </body>
