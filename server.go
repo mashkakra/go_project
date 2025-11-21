@@ -346,11 +346,11 @@ func getTutorGrades(tutorID int) ([]Grade, error) {
 
 func getTutorTimeSlots(tutorID int) ([]TimeSlot, error) {
 	rows, err := db.Query(context.Background(), `
-		SELECT id, date, start_time, end_time 
-		FROM time_slots 
-		WHERE tutor_id = $1 AND is_available = true AND date >= CURRENT_DATE
-		ORDER BY date, start_time
-	`, tutorID)
+        SELECT id, date, start_time, end_time 
+        FROM time_slots 
+        WHERE tutor_id = $1 AND is_available = true 
+        ORDER BY date, start_time
+    `, tutorID)
 	if err != nil {
 		return nil, err
 	}
@@ -380,12 +380,37 @@ func createApplication(tutorID int, studentName, studentPhone, studentEmail stri
 
 // Обработчики HTTP
 func home(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("static/index.html")
+	t, err := template.ParseFiles("index.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	t.Execute(w, nil)
+}
+
+// Простой обработчик для добавления тестового слота
+func addTestSlotHandler(w http.ResponseWriter, r *http.Request) {
+	// ID преподавателя Петра Сидорова (замените на реальный ID из вашей БД)
+	tutorID := 2 // или тот ID, который у Петра Сидорова в вашей БД
+
+	// Добавляем слот на завтра
+	tomorrow := time.Now().AddDate(0, 0, 1).Format("2006-01-02")
+
+	_, err := db.Exec(context.Background(), `
+        INSERT INTO time_slots (tutor_id, date, start_time, end_time, is_available)
+        VALUES ($1, $2, $3, $4, true)
+    `, tutorID, tomorrow, "15:00", "16:30")
+
+	if err != nil {
+		http.Error(w, "Ошибка добавления слота: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "Слот добавлен для Петра Сидорова: " + tomorrow + " 15:00-16:30",
+	})
 }
 
 func tutor(w http.ResponseWriter, r *http.Request) {
@@ -427,6 +452,15 @@ func tutor(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func adminHandler(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("admin.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	t.Execute(w, nil)
+}
+
 func getRequest() {
 	// Инициализируем подключение к БД
 	initDB()
@@ -437,6 +471,8 @@ func getRequest() {
 	http.HandleFunc("/fortutor/", tutor)
 	http.HandleFunc("/api/tutors", getTutorsHandler)
 	http.HandleFunc("/api/application", submitApplicationHandler)
+	http.HandleFunc("/admin/", adminHandler)
+	http.HandleFunc("/api/add-slot", addTestSlotHandler)
 
 	log.Println("🚀 Сервер запущен на http://localhost:8080")
 	log.Println("🎓 Запись к репетиторам доступна по адресу: http://localhost:8080/fortutor/")
