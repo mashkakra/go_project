@@ -25,6 +25,7 @@ func main() {
 	http.HandleFunc("/api/add-slot", addTestSlotHandler)
 	http.HandleFunc("/api/login", loginHandler)
 	http.HandleFunc("/api/admin/create-user", createUserHandler)
+	http.HandleFunc("/api/tutor/lesson-action", tutorActionHandler)
 	http.HandleFunc("/api/forgot-password", forgotPasswordHandler)
 	http.HandleFunc("/api/student/lesson-action", lessonActionHandler)
 

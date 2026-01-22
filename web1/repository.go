@@ -481,3 +481,81 @@ func declineLesson(lessonID int) error {
 	_, err := db.Exec(context.Background(), query, lessonID)
 	return err
 }
+func getConfirmedLessons(tutorUsername string) ([]map[string]interface{}, error) {
+	query := `
+        SELECT l.student_name, l.student_phone, ts.date, ts.start_time
+        FROM lessons l
+        JOIN tutors t ON l.tutor_id = t.id
+        JOIN time_slots ts ON l.timeslot_id = ts.id
+        WHERE t.username = $1 AND l.status = 'scheduled'
+        ORDER BY ts.date DESC
+    `
+	rows, err := db.Query(context.Background(), query, tutorUsername)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lessons []map[string]interface{}
+	for rows.Next() {
+		var name, phone, startTime string
+		var date time.Time
+		rows.Scan(&name, &phone, &date, &startTime)
+
+		lessons = append(lessons, map[string]interface{}{
+			"StudentName":  name,
+			"StudentPhone": phone,
+			"Date":         date.Format("02.01.2006"),
+			"Time":         startTime,
+		})
+	}
+	return lessons, nil
+}
+
+func getAllLessonsForAdmin() ([]map[string]interface{}, error) {
+	// Используем LEFT JOIN, чтобы увидеть уроки, даже если слот или репетитор удалены
+	query := `
+        SELECT 
+            l.id, 
+            COALESCE(l.student_name, 'Не указано'), 
+            COALESCE(l.status, 'unknown'), 
+            COALESCE(t.last_name, 'Удален'), 
+            COALESCE(ts.date, '0001-01-01'), 
+            COALESCE(ts.start_time, '00:00')
+        FROM lessons l
+        LEFT JOIN tutors t ON l.tutor_id = t.id
+        LEFT JOIN time_slots ts ON l.timeslot_id = ts.id WHERE l.status='scheduled'
+        ORDER BY l.id DESC
+    `
+	rows, err := db.Query(context.Background(), query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var allLessons []map[string]interface{}
+
+	for rows.Next() {
+		var id int
+		var sName, status, tName, sTime string
+		var date time.Time
+
+		if err := rows.Scan(&id, &sName, &status, &tName, &date, &sTime); err != nil {
+			fmt.Println("Ошибка Scan:", err)
+			continue
+		}
+
+		row := map[string]interface{}{
+			"ID":          id,
+			"StudentName": sName,
+			"Status":      status,
+			"TutorName":   tName,
+			"Date":        date.Format("02.01.2006"),
+			"Time":        sTime,
+		}
+		allLessons = append(allLessons, row)
+	}
+
+	fmt.Printf("Админ: найдено %d записей\n", len(allLessons)) // Проверка в терминале
+	return allLessons, nil
+}

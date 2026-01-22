@@ -1,25 +1,70 @@
-<h1>Кабинет репетитора: {{.Username}}</h1>
-<h2>Мои ученики</h2>
-<ul>
-    {{range .Applications}}
-    <li>Студент: {{.student_name}}, Тел: {{.student_phone}}</li>
-    {{end}}
-</ul>   
-<div class="requests-section">
-    <h2>Новые запросы на занятия</h2>
-    {{range .PendingLessons}}
-    <div class="request-card">
-        <p><strong>Ученик:</strong> {{.StudentName}}</p>
-        <p><strong>Время:</strong> {{.Date}} {{.StartTime}}</p>
-        
-        <form action="/api/tutor/lesson-action" method="POST">
-            <input type="hidden" name="lesson_id" value="{{.ID}}">
-            <button name="action" value="accept" class="btn-accept">Принять</button>
-            <button name="action" value="decline" class="btn-decline">Отклонить</button>
-            <button name="action" value="reschedule" class="btn-reschedule">Предложить перенос</button>
-        </form>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Кабинет репетитора</title>
+    <style>
+        .request-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; background: #f9f9f9; }
+        .btn-accept { background: #28a745; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+        .btn-decline { background: #dc3545; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+        .status-scheduled { color: green; font-weight: bold; }
+        .status-pending { color: orange; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <h1>Кабинет репетитора: {{.Username}}</h1>
+
+    ---
+
+    <h2>Мои подтвержденные занятия</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Ученик</th>
+                <th>Телефон</th>
+                <th>Дата и время</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .AllLessons}}
+            <tr>
+                <td>{{.StudentName}}</td>
+                <td>{{.StudentPhone}}</td>
+                <td>{{.Date}} в {{.StartTime}}</td>
+                <td><span class="status-{{.Status}}">Подтверждено</span></td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="4">У вас пока нет подтвержденных учеников.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+
+    ---
+
+    <div class="requests-section">
+        <h2>Новые запросы на занятия</h2>
+        {{range .PendingLessons}}
+        <div class="request-card">
+            <p><strong>Ученик:</strong> {{.StudentName}}</p>
+            <p><strong>Телефон:</strong> {{.StudentPhone}}</p>
+            <p><strong>Время:</strong> {{.Date}} в {{.StartTime}}</p>
+            
+            <form action="/api/tutor/lesson-action" method="POST">
+                <input type="hidden" name="lesson_id" value="{{.ID}}">
+                <button name="action" value="accept" class="btn-accept">Принять</button>
+                <button name="action" value="decline" class="btn-decline">Отклонить</button>
+            </form>
+        </div>
+        {{else}}
+        <p>Новых запросов на обучение нет.</p>
+        {{end}}
     </div>
-    {{else}}
-    <p>Новых запросов нет</p>
-    {{end}}
-</div>
+
+</body>
+</html>

@@ -235,11 +235,13 @@ func adminDashboard(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем уведомления о паролях
 	notes, _ := getAdminNotifications()
 	// 2. Получаем все заявки на обучение
+	lessons, _ := getAllLessonsForAdmin()
 	apps, _ := getApplications("") // пустая строка = все
 
 	data := map[string]interface{}{
 		"Notifications": notes,
 		"Applications":  apps,
+		"AllLessons":    lessons, // Ключ "AllLessons"
 	}
 
 	t, _ := template.ParseFiles("templates/admin_dashboard.html")
@@ -263,7 +265,6 @@ func renderTemplate(w http.ResponseWriter, tmplName string, data interface{}) {
 
 // Кабинет репетитора
 func tutorDashboard(w http.ResponseWriter, r *http.Request) {
-	// 1. Проверяем наличие куки
 	cookie, err := r.Cookie("session_user")
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -271,22 +272,26 @@ func tutorDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 	username := cookie.Value
 
-	// 2. Получаем заявки.
-	// Важно: если функция вернула ошибку, мы должны её увидеть в консоли
+	// 1. Получаем новые заявки (pending)
 	pending, err := getTutorLessons(username)
 	if err != nil {
-		fmt.Println("Ошибка получения заявок:", err)
-		http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
-		return
+		log.Printf("Ошибка получения новых заявок: %v", err)
 	}
 
-	// 3. Подготовка данных
+	// 2. Получаем подтвержденные уроки (scheduled)
+	confirmed, err := getConfirmedLessons(username)
+	if err != nil {
+		log.Printf("Ошибка получения подтвержденных уроков: %v", err)
+	}
+
+	// 3. Подготовка данных для шаблона
 	data := map[string]interface{}{
 		"Username":       username,
-		"PendingLessons": pending,
+		"AllLessons":     confirmed, // Заполняем таблицу "Мои ученики" через этот ключ
+		"PendingLessons": pending,   // Заполняем карточки "Новые запросы"
+		"Applications":   confirmed, // Для списка внизу (дублируем, чтобы работало везде)
 	}
 
-	// 4. Отрисовка
 	renderTemplate(w, "tutor_dashboard.html", data)
 }
 func createUserHandler(w http.ResponseWriter, r *http.Request) {
