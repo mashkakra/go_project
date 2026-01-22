@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Личный кабинет ученика</title>
+    <style>
+        body { font-family: Arial; margin: 40px; background: #f4f4f4; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        .status-scheduled { color: green; font-weight: bold; }
+        .status-reschedule_requested { color: orange; font-weight: bold; }
+        .status-cancelled { color: red; text-decoration: line-through; }
+        .btn { padding: 5px 10px; cursor: pointer; border: none; border-radius: 4px; color: white; }
+        .btn-reschedule { background: #f0ad4e; }
+        .btn-cancel { background: #d9534f; }
+    </style>
+</head>
+<h2>Перенос занятия для урока №{{.LessonID}}</h2>
+
+<h3>Выбрать из свободных слотов:</h3>
+<form action="/api/tutor/confirm-reschedule" method="POST">
+    <input type="hidden" name="lesson_id" value="{{.LessonID}}">
+    <select name="new_slot_id">
+        {{range .AvailableSlots}}
+        <option value="{{.ID}}">{{.Date}} в {{.StartTime}}</option>
+        {{else}}
+        <option disabled>Нет свободных слотов</option>
+        {{end}}
+    </select>
+    <button type="submit">Подтвердить перенос</button>
+</form>
+
+<hr>
+
+<h3>Или создать новое время:</h3>
+<form action="/api/tutor/create-and-reschedule" method="POST">
+    <input type="hidden" name="lesson_id" value="{{.LessonID}}">
+    <input type="date" name="date" required>
+    <input type="time" name="time" required>
+    <button type="submit">Создать и перенести</button>
+</form>

@@ -18,6 +18,7 @@ func main() {
 	http.HandleFunc("/admin/dashboard", adminDashboard)
 	http.HandleFunc("/tutor/dashboard", tutorDashboard)
 	http.HandleFunc("/student/dashboard", studentDashboardHandler)
+	http.HandleFunc("/tutor/reschedule", reschedulePageHandler) // Сама страница со списком
 
 	// API маршруты
 	http.HandleFunc("/api/tutors", getTutorsHandler)
@@ -25,9 +26,12 @@ func main() {
 	http.HandleFunc("/api/add-slot", addTestSlotHandler)
 	http.HandleFunc("/api/login", loginHandler)
 	http.HandleFunc("/api/admin/create-user", createUserHandler)
+	http.HandleFunc("/api/admin/create-student", adminCreateStudentHandler)
 	http.HandleFunc("/api/tutor/lesson-action", tutorActionHandler)
 	http.HandleFunc("/api/forgot-password", forgotPasswordHandler)
 	http.HandleFunc("/api/student/lesson-action", lessonActionHandler)
+	http.HandleFunc("/api/tutor/confirm-reschedule", confirmRescheduleHandler)
+	http.HandleFunc("/api/tutor/create-and-reschedule", createAndRescheduleHandler)
 
 	// 3. Запуск сервера
 	port := ":8080"

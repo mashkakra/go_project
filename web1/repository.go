@@ -297,35 +297,6 @@ func getStudentLessons(studentID int) ([]map[string]interface{}, error) {
 }
 
 // Обновленная функция отмены занятия
-func cancelLesson(lessonID int) error {
-	ctx := context.Background()
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	// 1. Получаем ID слота, который сейчас занят этим уроком
-	var slotID int
-	err = tx.QueryRow(ctx, "SELECT timeslot_id FROM lessons WHERE id = $1", lessonID).Scan(&slotID)
-	if err != nil {
-		return err
-	}
-
-	// 2. Помечаем слот как СВОБОДНЫЙ (теперь его увидят другие)
-	_, err = tx.Exec(ctx, "UPDATE time_slots SET is_available = true WHERE id = $1", slotID)
-	if err != nil {
-		return err
-	}
-
-	// 3. Обновляем статус самого урока
-	_, err = tx.Exec(ctx, "UPDATE lessons SET status = 'cancelled' WHERE id = $1", lessonID)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit(ctx)
-}
 
 // Функция переноса занятия (уже учитывает освобождение старого и занятие нового)
 
@@ -482,13 +453,13 @@ func declineLesson(lessonID int) error {
 	return err
 }
 func getConfirmedLessons(tutorUsername string) ([]map[string]interface{}, error) {
+	// ПОРЯДОК: 1.id, 2.student_name, 3.student_phone, 4.date, 5.start_time
 	query := `
-        SELECT l.student_name, l.student_phone, ts.date, ts.start_time
+        SELECT l.id, l.student_name, l.student_phone, ts.date, ts.start_time
         FROM lessons l
         JOIN tutors t ON l.tutor_id = t.id
         JOIN time_slots ts ON l.timeslot_id = ts.id
         WHERE t.username = $1 AND l.status = 'scheduled'
-        ORDER BY ts.date DESC
     `
 	rows, err := db.Query(context.Background(), query, tutorUsername)
 	if err != nil {
@@ -498,20 +469,27 @@ func getConfirmedLessons(tutorUsername string) ([]map[string]interface{}, error)
 
 	var lessons []map[string]interface{}
 	for rows.Next() {
+		var id int
 		var name, phone, startTime string
 		var date time.Time
-		rows.Scan(&name, &phone, &date, &startTime)
+
+		// СТРОГО соблюдаем порядок из SELECT выше!
+		err := rows.Scan(&id, &name, &phone, &date, &startTime)
+		if err != nil {
+			return nil, err
+		}
 
 		lessons = append(lessons, map[string]interface{}{
+			"ID":           id,
 			"StudentName":  name,
 			"StudentPhone": phone,
 			"Date":         date.Format("02.01.2006"),
-			"Time":         startTime,
+			"StartTime":    startTime,
+			"Status":       "scheduled",
 		})
 	}
 	return lessons, nil
 }
-
 func getAllLessonsForAdmin() ([]map[string]interface{}, error) {
 	// Используем LEFT JOIN, чтобы увидеть уроки, даже если слот или репетитор удалены
 	query := `
@@ -558,4 +536,184 @@ func getAllLessonsForAdmin() ([]map[string]interface{}, error) {
 
 	fmt.Printf("Админ: найдено %d записей\n", len(allLessons)) // Проверка в терминале
 	return allLessons, nil
+}
+
+func cancelLesson(lessonID int) error {
+	ctx := context.Background()
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	var slotID int
+	tx.QueryRow(ctx, "SELECT timeslot_id FROM lessons WHERE id = $1", lessonID).Scan(&slotID)
+
+	// 1. Статус урока — отменен
+	tx.Exec(ctx, "UPDATE lessons SET status = 'cancelled' WHERE id = $1", lessonID)
+	// 2. Слот времени снова СВОБОДЕН для записи
+	tx.Exec(ctx, "UPDATE time_slots SET is_available = true WHERE id = $1", slotID)
+
+	return tx.Commit(ctx)
+}
+
+func getAvailableSlotsForTutor(tutorUsername string) ([]map[string]interface{}, error) {
+	// Выбираем только свободные слоты конкретного репетитора
+	query := `
+        SELECT ts.id, ts.date, ts.start_time
+        FROM time_slots ts
+        JOIN tutors t ON ts.tutor_id = t.id
+        WHERE t.username = $1 AND ts.is_available = true
+        ORDER BY ts.date ASC, ts.start_time ASC
+    `
+
+	rows, err := db.Query(context.Background(), query, tutorUsername)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка получения свободных слотов: %v", err)
+	}
+	defer rows.Close()
+
+	var slots []map[string]interface{}
+	for rows.Next() {
+		var id int
+		var startTime string
+		var date time.Time
+
+		if err := rows.Scan(&id, &date, &startTime); err != nil {
+			return nil, err
+		}
+
+		slots = append(slots, map[string]interface{}{
+			"ID":        id,
+			"Date":      date.Format("02.01.2006"),
+			"StartTime": startTime,
+		})
+	}
+
+	return slots, nil
+}
+func updateLessonSlot(lessonID int, newSlotID int) error {
+	ctx := context.Background()
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// 1. Находим текущий слот занятия, чтобы его освободить
+	var oldSlotID int
+	err = tx.QueryRow(ctx, "SELECT timeslot_id FROM lessons WHERE id = $1", lessonID).Scan(&oldSlotID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Делаем старый слот СВОБОДНЫМ
+	_, err = tx.Exec(ctx, "UPDATE time_slots SET is_available = true WHERE id = $1", oldSlotID)
+	if err != nil {
+		return err
+	}
+
+	// 3. Привязываем урок к новому слоту и меняем статус (если нужно)
+	_, err = tx.Exec(ctx, "UPDATE lessons SET timeslot_id = $1, status = 'scheduled' WHERE id = $2", newSlotID, lessonID)
+	if err != nil {
+		return err
+	}
+
+	// 4. Делаем новый слот ЗАНЯТЫМ
+	_, err = tx.Exec(ctx, "UPDATE time_slots SET is_available = false WHERE id = $1", newSlotID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+func createAndAssignNewSlot(lessonID int, tutorUsername string, date string, timeStr string) error {
+	ctx := context.Background()
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// 1. Получаем tutor_id по username
+	var tutorID int
+	err = tx.QueryRow(ctx, "SELECT id FROM tutors WHERE username = $1", tutorUsername).Scan(&tutorID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Создаем НОВЫЙ слот и получаем его ID
+	var newSlotID int
+
+	queryInsert := `
+        INSERT INTO time_slots (tutor_id, date, start_time, end_time, is_available) 
+        VALUES ($1, $2, $3, ($3::time + interval '1 hour'), false) 
+        RETURNING id`
+
+	err = tx.QueryRow(ctx, queryInsert, tutorID, date, timeStr).Scan(&newSlotID)
+	if err != nil {
+		return fmt.Errorf("ошибка вставки слота: %v", err)
+	}
+	// 3. Находим СТАРЫЙ слот урока, чтобы его освободить
+	var oldSlotID int
+	err = tx.QueryRow(ctx, "SELECT timeslot_id FROM lessons WHERE id = $1", lessonID).Scan(&oldSlotID)
+	if err != nil {
+		return err
+	}
+
+	// 4. Делаем старый слот СВОБОДНЫМ
+	_, err = tx.Exec(ctx, "UPDATE time_slots SET is_available = true WHERE id = $1", oldSlotID)
+	if err != nil {
+		return err
+	}
+
+	// 5. Привязываем урок к НОВОМУ слоту
+	_, err = tx.Exec(ctx, "UPDATE lessons SET timeslot_id = $1, status = 'scheduled' WHERE id = $2", newSlotID, lessonID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func CreateStudentAccountFromLesson(lessonID int, login, password string) error {
+	ctx := context.Background()
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// 1. Берем данные ученика из заявки (урока)
+	var name, phone string
+	err = tx.QueryRow(ctx, "SELECT student_name, student_phone FROM lessons WHERE id = $1", lessonID).Scan(&name, &phone)
+	if err != nil {
+		return fmt.Errorf("lesson not found: %v", err)
+	}
+
+	// 2. Создаем запись в таблице users (роль 'student')
+	var userID int
+	err = tx.QueryRow(ctx,
+		"INSERT INTO users (username, password, role) VALUES ($1, $2, 'student') RETURNING id",
+		login, password).Scan(&userID)
+	if err != nil {
+		return fmt.Errorf("failed to create user: %v", err)
+	}
+
+	// 3. Создаем профиль в таблице students
+	var studentID int
+	err = tx.QueryRow(ctx,
+		"INSERT INTO students (user_id, full_name, phone) VALUES ($1, $2, $3) RETURNING id",
+		userID, name, phone).Scan(&studentID)
+	if err != nil {
+		return fmt.Errorf("failed to create student profile: %v", err)
+	}
+
+	// 4. Привязываем урок к этому ученику
+	_, err = tx.Exec(ctx, "UPDATE lessons SET student_id = $1 WHERE id = $2", studentID, lessonID)
+	if err != nil {
+		return fmt.Errorf("failed to link lesson: %v", err)
+	}
+
+	return tx.Commit(ctx)
 }

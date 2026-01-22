@@ -382,7 +382,6 @@ func bookLessonHandler(w http.ResponseWriter, r *http.Request) {
 
 func tutorActionHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -390,17 +389,105 @@ func tutorActionHandler(w http.ResponseWriter, r *http.Request) {
 	action := r.FormValue("action")
 
 	var err error
-	if action == "accept" {
-		err = acceptLesson(lessonID) // Меняет статус на 'scheduled' и is_available = false
-	} else if action == "decline" {
-		err = declineLesson(lessonID) // Меняет статус на 'declined', слот остается свободным
-	}
-
-	if err != nil {
-		http.Error(w, "Ошибка при обработке: "+err.Error(), http.StatusInternalServerError)
+	switch action {
+	case "accept":
+		err = acceptLesson(lessonID)
+	case "decline":
+		err = declineLesson(lessonID)
+	case "cancel":
+		err = cancelLesson(lessonID)
+	case "reschedule":
+		// Просто перенаправляем на страницу выбора времени
+		http.Redirect(w, r, fmt.Sprintf("/tutor/reschedule?lesson_id=%d", lessonID), http.StatusSeeOther)
 		return
 	}
 
-	// Возвращаем репетитора обратно в кабинет
+	if err != nil {
+		log.Printf("Ошибка действия %s: %v", action, err)
+	}
+
 	http.Redirect(w, r, "/tutor/dashboard", http.StatusSeeOther)
+}
+
+func reschedulePageHandler(w http.ResponseWriter, r *http.Request) {
+	lessonID := r.URL.Query().Get("lesson_id")
+	cookie, _ := r.Cookie("session_user")
+
+	// Получаем свободные слоты
+	slots, err := getAvailableSlotsForTutor(cookie.Value)
+	if err != nil { /* обработка ошибки */
+	}
+
+	data := map[string]interface{}{
+		"LessonID":       lessonID,
+		"AvailableSlots": slots,
+	}
+	renderTemplate(w, "reschedule.html", data)
+}
+
+func confirmRescheduleHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/tutor/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	lessonID, _ := strconv.Atoi(r.FormValue("lesson_id"))
+	newSlotID, _ := strconv.Atoi(r.FormValue("new_slot_id"))
+
+	err := updateLessonSlot(lessonID, newSlotID)
+	if err != nil {
+		log.Printf("Ошибка переноса: %v", err)
+		http.Error(w, "Не удалось перенести занятие", http.StatusInternalServerError)
+		return
+	}
+
+	// После успешного переноса возвращаем репетитора в кабинет
+	http.Redirect(w, r, "/tutor/dashboard", http.StatusSeeOther)
+}
+func createAndRescheduleHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/tutor/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	// Извлекаем данные из формы
+	lessonID, _ := strconv.Atoi(r.FormValue("lesson_id"))
+	newDate := r.FormValue("date")
+	newTime := r.FormValue("time")
+
+	// Получаем username репетитора из куки
+	cookie, _ := r.Cookie("session_user")
+	tutorUsername := cookie.Value
+
+	// Вызываем функцию базы данных
+	err := createAndAssignNewSlot(lessonID, tutorUsername, newDate, newTime)
+	if err != nil {
+		log.Printf("Ошибка при создании и переносе: %v", err)
+		http.Error(w, "Ошибка при создании нового времени", 500)
+		return
+	}
+
+	// Возвращаемся в кабинет
+	http.Redirect(w, r, "/tutor/dashboard", http.StatusSeeOther)
+}
+
+func adminCreateStudentHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	lessonID, _ := strconv.Atoi(r.FormValue("lesson_id"))
+	login := r.FormValue("login")
+	password := r.FormValue("password")
+
+	err := CreateStudentAccountFromLesson(lessonID, login, password)
+	if err != nil {
+		log.Printf("Error creating student: %v", err)
+		http.Error(w, "Ошибка при создании аккаунта", 500)
+		return
+	}
+
+	// Возвращаемся в панель админа
+	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 }
