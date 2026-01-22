@@ -50,8 +50,7 @@
         <input type="email" id="studentEmail">
         
         <input type="hidden" id="selectedTutorId">
-        
-        <br><br>
+        <input type="hidden" id="selectedSlotId"> <br><br>
         <button onclick="submitApplication()">Завершить запись</button>
     </div>
 
@@ -123,33 +122,31 @@
             
             tutors.forEach(tutor => {
                 const teacherDiv = document.createElement('div');
+                teacherDiv.className = 'teacher-card'; // Добавим класс для стилей
                 teacherDiv.style.border = '1px solid #ccc';
                 teacherDiv.style.padding = '10px';
                 teacherDiv.style.margin = '10px 0';
-                
-                // Форматируем стоимость
-                const hourlyRate = tutor.hourly_rate ? `${tutor.hourly_rate} руб/час` : 'Не указана';
-                
-                // Форматируем расписание
-                let scheduleInfo = 'Нет доступных окон';
+
+                // Формируем кнопки для каждого свободного слота
+                let slotsHtml = '';
                 if (tutor.time_slots && tutor.time_slots.length > 0) {
-                    const slots = tutor.time_slots.map(slot => {
+                    slotsHtml = tutor.time_slots.map(slot => {
                         const date = new Date(slot.date).toLocaleDateString('ru-RU');
-                        return `${date} ${slot.start_time}-${slot.end_time}`;
-                    });
-                    scheduleInfo = slots.join(', ');
+                        // При нажатии на время вызываем selectSlot
+                        return `<button class="slot-btn" onclick="selectSlot(${tutor.id}, ${slot.id}, '${tutor.full_name}', '${date} ${slot.start_time}')">
+                                    ${date} ${slot.start_time}
+                                </button>`;
+                    }).join(' ');
+                } else {
+                    slotsHtml = '<span style="color:red">Нет свободных окон</span>';
                 }
-                
+
                 teacherDiv.innerHTML = `
                     <h3>${tutor.full_name}</h3>
-                    <p><strong>Опыт работы:</strong> ${tutor.experience_years} лет</p>
-                    <p><strong>Стоимость:</strong> ${hourlyRate}</p>
-                    <p><strong>Рейтинг:</strong> ${tutor.avg_rating ? tutor.avg_rating.toFixed(1) : 'Нет оценок'}</p>
-                    <p><strong>Биография:</strong> ${tutor.bio || 'Не указана'}</p>
-                    <p><strong>Доступные окна:</strong> ${scheduleInfo}</p>
-                    <button onclick="selectTeacher(${tutor.id}, '${tutor.full_name.replace(/'/g, "\\'")}')">Выбрать этого преподавателя</button>
+                    <p><strong>Опыт:</strong> ${tutor.experience_years} лет | <strong>Цена:</strong> ${tutor.hourly_rate} руб/час</p>
+                    <p><strong>Выберите время для занятия:</strong></p>
+                    <div class="slots-container">${slotsHtml}</div>
                 `;
-                
                 teachersList.appendChild(teacherDiv);
             });
         }
@@ -162,38 +159,68 @@
             // Показываем шаг 4
             document.getElementById('step4').style.display = 'block';
         }
+        
 
+
+        function selectSlot(tutorId, slotId, tutorName, slotTime) {
+            console.log("Выбран репетитор:", tutorId, "Слот:", slotId); // Для проверки в консоли браузера (F12)
+
+            // 1. Записываем данные в скрытые поля
+            document.getElementById('selectedTutorId').value = tutorId;
+            document.getElementById('selectedSlotId').value = slotId;
+
+            // 2. Показываем визуальное подтверждение
+            alert(`Вы выбрали: ${tutorName}\nВремя: ${slotTime}`);
+
+            // 3. Делаем видимым Шаг 4
+            const step4 = document.getElementById('step4');
+            step4.style.display = 'block';
+
+            // 4. Прокручиваем страницу вниз к форме
+            step4.scrollIntoView({ behavior: 'smooth' });
+        }
         function submitApplication() {
             const name = document.getElementById('studentName').value;
             const phone = document.getElementById('studentPhone').value;
             const email = document.getElementById('studentEmail').value;
             const tutorId = document.getElementById('selectedTutorId').value;
-            
-            if (name && phone && email && tutorId) {
-                // Отправляем заявку на сервер
+            const slotId = document.getElementById('selectedSlotId').value;
+
+            // ЛОГИ ДЛЯ ПРОВЕРКИ (Нажмите F12 в браузере, чтобы увидеть)
+            console.log("Данные перед отправкой:", { name, phone, email, tutorId, slotId });
+
+            if (name && phone && email && tutorId && slotId) {
                 fetch('/api/application', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `tutor_id=${tutorId}&student_name=${encodeURIComponent(name)}&student_phone=${encodeURIComponent(phone)}&student_email=${encodeURIComponent(email)}`
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `tutor_id=${tutorId}&slot_id=${slotId}&student_name=${encodeURIComponent(name)}&student_phone=${encodeURIComponent(phone)}&student_email=${encodeURIComponent(email)}`
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log("Статус ответа сервера:", response.status);
+                    return response.json();
+                })
                 .then(data => {
                     if (data.status === 'success') {
-                        alert('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
-                        // Сбрасываем форму
-                        resetForm();
+                        alert('Вы успешно записаны!');
+                        window.location.href = '/';
                     } else {
-                        alert('Ошибка при отправке заявки: ' + data.message);
+                        alert('Ошибка сервера: ' + data.message);
                     }
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Ошибка при отправке заявки');
+                .catch(err => {
+                    console.error("Ошибка Fetch:", err);
+                    alert('Не удалось связаться с сервером');
                 });
             } else {
-                alert('Пожалуйста, заполните все контактные данные');
+                // Уточняем, чего именно не хватает
+                let missing = [];
+                if(!name) missing.push("Имя");
+                if(!phone) missing.push("Телефон");
+                if(!email) missing.push("Email");
+                if(!tutorId) missing.push("ID репетитора");
+                if(!slotId) missing.push("Время (слот)");
+                
+                alert('Заполните поля: ' + missing.join(", "));
             }
         }
 

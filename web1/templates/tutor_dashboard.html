@@ -1,0 +1,25 @@
+<h1>Кабинет репетитора: {{.Username}}</h1>
+<h2>Мои ученики</h2>
+<ul>
+    {{range .Applications}}
+    <li>Студент: {{.student_name}}, Тел: {{.student_phone}}</li>
+    {{end}}
+</ul>   
+<div class="requests-section">
+    <h2>Новые запросы на занятия</h2>
+    {{range .PendingLessons}}
+    <div class="request-card">
+        <p><strong>Ученик:</strong> {{.StudentName}}</p>
+        <p><strong>Время:</strong> {{.Date}} {{.StartTime}}</p>
+        
+        <form action="/api/tutor/lesson-action" method="POST">
+            <input type="hidden" name="lesson_id" value="{{.ID}}">
+            <button name="action" value="accept" class="btn-accept">Принять</button>
+            <button name="action" value="decline" class="btn-decline">Отклонить</button>
+            <button name="action" value="reschedule" class="btn-reschedule">Предложить перенос</button>
+        </form>
+    </div>
+    {{else}}
+    <p>Новых запросов нет</p>
+    {{end}}
+</div>

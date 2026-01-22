@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Личный кабинет ученика</title>
+    <style>
+        body { font-family: Arial; margin: 40px; background: #f4f4f4; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        .status-scheduled { color: green; font-weight: bold; }
+        .status-reschedule_requested { color: orange; font-weight: bold; }
+        .status-cancelled { color: red; text-decoration: line-through; }
+        .btn { padding: 5px 10px; cursor: pointer; border: none; border-radius: 4px; color: white; }
+        .btn-reschedule { background: #f0ad4e; }
+        .btn-cancel { background: #d9534f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Моё расписание занятий</h1>
+        <table>
+            <tr>
+                <th>Дата</th>
+                <th>Время</th>
+                <th>Репетитор</th>
+                <th>Статус</th>
+                <th>Действия</th>
+            </tr>
+            {{range .Lessons}}
+            <tr>
+                <td>{{.Date}}</td>
+                <td>{{.Time}}</td>
+                <td>{{.TutorName}}</td>
+                <td class="status-{{.Status}}">{{.Status}}</td>
+                <td>
+                    {{if eq .Status "scheduled"}}
+                    <form action="/api/student/lesson-action" method="POST" style="display:inline;">
+                        <input type="hidden" name="lesson_id" value="{{.ID}}">
+                        <button type="submit" name="action" value="reschedule" class="btn btn-reschedule">Перенос</button>
+                        <button type="submit" name="action" value="cancel" class="btn btn-cancel">Отмена</button>
+                    </form>
+                    {{else}}
+                    --
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+        </table>
+        <br>
+        <a href="/fortutor/">Найти нового репетитора</a>
+    </div>
+</body>
+</html>

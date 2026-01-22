@@ -14,11 +14,19 @@ func main() {
 	http.HandleFunc("/", home)
 	http.HandleFunc("/fortutor/", tutor)
 	http.HandleFunc("/admin/", adminHandler)
+	http.HandleFunc("/login", loginPage)
+	http.HandleFunc("/admin/dashboard", adminDashboard)
+	http.HandleFunc("/tutor/dashboard", tutorDashboard)
+	http.HandleFunc("/student/dashboard", studentDashboardHandler)
 
 	// API маршруты
 	http.HandleFunc("/api/tutors", getTutorsHandler)
 	http.HandleFunc("/api/application", submitApplicationHandler)
 	http.HandleFunc("/api/add-slot", addTestSlotHandler)
+	http.HandleFunc("/api/login", loginHandler)
+	http.HandleFunc("/api/admin/create-user", createUserHandler)
+	http.HandleFunc("/api/forgot-password", forgotPasswordHandler)
+	http.HandleFunc("/api/student/lesson-action", lessonActionHandler)
 
 	// 3. Запуск сервера
 	port := ":8080"
@@ -28,4 +36,5 @@ func main() {
 	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatal("Ошибка запуска сервера: ", err)
 	}
+
 }

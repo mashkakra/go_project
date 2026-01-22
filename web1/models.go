@@ -56,3 +56,16 @@ type Config struct {
 	DBPassword string
 	DBName     string
 }
+
+// LoginRequest данные из формы входа
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// User — общая структура пользователя (для сессий)
+type User struct {
+	ID    int    `json:"id"`
+	Email string `json:"email"`
+	Role  string `json:"role"` // "student", "tutor", "admin"
+}

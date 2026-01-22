@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход в систему — TutorBooking</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --dark: #333;
+            --gray: #f4f7f6;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--gray);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-card h2 {
+            text-align: center;
+            color: var(--dark);
+            margin-bottom: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box; /* Чтобы padding не раздувал ширину */
+        }
+        button {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+        .footer-links {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .footer-links a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        /* Стили для модального окна (плашки) */
+        #forgotModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.3);
+            z-index: 1000;
+            width: 320px;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <h2>Вход в систему</h2>
+    <form action="/api/login" method="POST">
+        <div class="form-group">
+            <label>Логин</label>
+            <input type="text" name="login" required placeholder="Ваш уникальный логин">
+        </div>
+        <div class="form-group">
+            <label>Пароль (8 символов)</label>
+            <input type="password" name="password" 
+                   required 
+                   minlength="8" 
+                   maxlength="8" 
+                   placeholder="••••••••">
+        </div>
+        <button type="submit">Войти</button>
+    </form>
+    
+    <div class="footer-links">
+        <a href="#" onclick="showModal()">Забыли пароль?</a>
+    </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="hideModal()"></div>
+<div id="forgotModal">
+    <h3>Восстановление</h3>
+    <p style="font-size: 0.8rem; color: #666;">Введите ваш логин, и мы отправим запрос администратору.</p>
+    <input type="email" id="forgotEmail" placeholder="Логин" style="margin-bottom: 1rem;">
+    <button onclick="sendForgotRequest()">Отправить запрос</button>
+    <button onclick="hideModal()" style="background: #ccc; margin-top: 0.5rem;">Отмена</button>
+</div>
+
+<script>
+    function showModal() {
+        document.getElementById('forgotModal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    function hideModal() {
+        document.getElementById('forgotModal').style.display = 'none';
+        document.getElementById('overlay').style.display = 'none';
+    }
+
+    async function sendForgotRequest() {
+        const email = document.getElementById('forgotEmail').value;
+        if (!email) return alert("Введите email");
+
+        const formData = new FormData();
+        formData.append('email', email);
+
+        const response = await fetch('/api/forgot-password', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            alert("Запрос отправлен! Администратор свяжется с вами.");
+            hideModal();
+        } else {
+            alert("Ошибка при отправке.");
+        }
+    }
+    async function sendForgotRequest() {
+    const login = document.getElementById('forgotLogin').value; // Поменяйте ID поля в HTML
+    if (!login) return alert("Введите ваш логин");
+
+    const formData = new FormData();
+    formData.append('login', login); // Отправляем логин вместо email
+
+    // ... далее ваш fetch как был раньше
+}
+</script>
+
+</body>
+</html>
