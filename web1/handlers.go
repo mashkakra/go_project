@@ -322,19 +322,23 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 
 // Страница кабинета ученика
 func studentDashboardHandler(w http.ResponseWriter, r *http.Request) {
-	// Для теста берем ID = 1 (admin_boss). В реальности берется из сессии после логина.
-	studentID := 3
-
-	lessons, err := getStudentLessons(studentID)
+	cookie, err := r.Cookie("session_user")
 	if err != nil {
-		http.Error(w, "Ошибка базы данных", 500)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	t, _ := template.ParseFiles("templates/student_dashboard.html")
-	t.Execute(w, map[string]interface{}{
-		"Lessons": lessons,
-	})
+	lessons, err := getStudentLessons(cookie.Value)
+	if err != nil {
+		log.Printf("Ошибка получения уроков ученика: %v", err)
+	}
+
+	data := map[string]interface{}{
+		"Username":   cookie.Value,
+		"AllLessons": lessons,
+	}
+
+	renderTemplate(w, "student_dashboard.html", data)
 }
 
 func lessonActionHandler(w http.ResponseWriter, r *http.Request) {

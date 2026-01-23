@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -257,20 +258,26 @@ func createUser(username, password, role string) error {
 
 // Получить расписание конкретного ученика
 // Получение расписания ученика
-func getStudentLessons(studentID int) ([]map[string]interface{}, error) {
+func getStudentLessons(username string) ([]map[string]interface{}, error) {
 	query := `
-		SELECT 
-			l.id, 
-			t.first_name, t.last_name, 
-			ts.date, ts.start_time, 
-			l.status
-		FROM lessons l
-		JOIN tutors t ON l.tutor_id = t.id
-		JOIN time_slots ts ON l.timeslot_id = ts.id
-		WHERE l.student_id = $1
-		ORDER BY ts.date DESC, ts.start_time DESC
-	`
-	rows, err := db.Query(context.Background(), query, studentID)
+        SELECT 
+            l.id, 
+            l.status, 
+            t.first_name || ' ' || t.last_name as tutor_name, 
+            ts.date, 
+            ts.start_time
+        FROM lessons l
+        JOIN students s ON l.student_id = s.id
+        JOIN users u ON s.user_id = u.id
+        JOIN tutors t ON l.tutor_id = t.id
+        JOIN time_slots ts ON l.timeslot_id = ts.id
+        WHERE u.username = $1
+        ORDER BY ts.date ASC
+    `
+	// Используем log для отладки
+	log.Printf("Запрос уроков для ученика: %s", username)
+
+	rows, err := db.Query(context.Background(), query, username)
 	if err != nil {
 		return nil, err
 	}
@@ -279,20 +286,23 @@ func getStudentLessons(studentID int) ([]map[string]interface{}, error) {
 	var lessons []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var fName, lName, startTime, status string
+		var status, tutorName, startTime string
 		var date time.Time
-		if err := rows.Scan(&id, &fName, &lName, &date, &startTime, &status); err != nil {
-			return nil, err
+
+		if err := rows.Scan(&id, &status, &tutorName, &date, &startTime); err != nil {
+			log.Printf("Ошибка Scan в getStudentLessons: %v", err)
+			continue
 		}
 
 		lessons = append(lessons, map[string]interface{}{
 			"ID":        id,
-			"TutorName": fName + " " + lName,
+			"TutorName": tutorName,
 			"Date":      date.Format("02.01.2006"),
-			"Time":      startTime,
+			"StartTime": startTime,
 			"Status":    status,
 		})
 	}
+	log.Printf("Найдено уроков для ученика %s: %d", username, len(lessons))
 	return lessons, nil
 }
 
@@ -303,7 +313,6 @@ func getStudentLessons(studentID int) ([]map[string]interface{}, error) {
 // Получаем только ДОСТУПНЫЕ слоты для конкретного репетитора
 // Получаем только ДОСТУПНЫЕ слоты для конкретного репетитора
 func getTutorLessons(tutorUsername string) ([]map[string]interface{}, error) {
-	// ВАЖНО: Проверьте имена колонок: student_name, date, start_time
 	query := `
         SELECT 
             l.id, 
@@ -325,19 +334,36 @@ func getTutorLessons(tutorUsername string) ([]map[string]interface{}, error) {
 	for rows.Next() {
 		var id int
 		var name, startTime string
-		var date time.Time
-		// Проверьте, что Scan получает именно 4 аргумента, как в SELECT выше
-		if err := rows.Scan(&id, &name, &date, &startTime); err != nil {
-			return nil, fmt.Errorf("ошибка сканирования: %v", err)
+		var dateRaw interface{} // Используем interface{}, чтобы не упасть на типе DATE
+
+		if err := rows.Scan(&id, &name, &dateRaw, &startTime); err != nil {
+			// Если ошибка здесь, вы увидите её в терминале
+			log.Printf("!!! Ошибка сканирования строки: %v", err)
+			continue
+		}
+
+		// Безопасное форматирование даты
+		dateStr := ""
+		if t, ok := dateRaw.(time.Time); ok {
+			dateStr = t.Format("02.01.2006")
+		} else {
+			dateStr = fmt.Sprintf("%v", dateRaw)
 		}
 
 		lessons = append(lessons, map[string]interface{}{
 			"ID":          id,
 			"StudentName": name,
-			"Date":        date.Format("02.01.2006"),
+			"Date":        dateStr,
 			"StartTime":   startTime,
 		})
 	}
+
+	// ВАЖНО: Проверка на ошибки после завершения цикла
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("ошибка итерации строк: %v", err)
+	}
+
+	log.Printf("Найдено заявок (pending) для %s: %d", tutorUsername, len(lessons))
 	return lessons, nil
 }
 func getTutorTimeSlots(tutorID int) ([]TimeSlot, error) {

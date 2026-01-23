@@ -4,51 +4,65 @@
     <meta charset="UTF-8">
     <title>Личный кабинет ученика</title>
     <style>
-        body { font-family: Arial; margin: 40px; background: #f4f4f4; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-        .status-scheduled { color: green; font-weight: bold; }
-        .status-reschedule_requested { color: orange; font-weight: bold; }
-        .status-cancelled { color: red; text-decoration: line-through; }
-        .btn { padding: 5px 10px; cursor: pointer; border: none; border-radius: 4px; color: white; }
-        .btn-reschedule { background: #f0ad4e; }
-        .btn-cancel { background: #d9534f; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 40px; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
+        h1 { color: #1a73e8; border-bottom: 2px solid #e8eaed; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th { background-color: #f8f9fa; color: #5f6368; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
+        th, td { padding: 15px; border: 1px solid #e8eaed; text-align: left; }
+        tr:hover { background-color: #f1f3f4; }
+        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+        .status-scheduled { background: #e6f4ea; color: #1e8e3e; } /* Подтвержден */
+        .status-pending { background: #fef7e0; color: #f9ab00; }   /* Ожидание */
+        .status-reschedule { background: #fce8e6; color: #d93025; } /* Перенос */
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Моё расписание занятий</h1>
-        <table>
+
+<div class="container">
+    <h1>Добро пожаловать, {{.Username}}!</h1>
+    
+    <h3>Моё расписание занятий</h3>
+    
+    <table>
+        <thead>
             <tr>
-                <th>Дата</th>
-                <th>Время</th>
                 <th>Репетитор</th>
+                <th>Дата занятия</th>
+                <th>Время начала</th>
                 <th>Статус</th>
-                <th>Действия</th>
             </tr>
-            {{range .Lessons}}
+        </thead>
+        <tbody>
+            {{range .AllLessons}}
             <tr>
+                <td><strong>{{.TutorName}}</strong></td>
                 <td>{{.Date}}</td>
-                <td>{{.Time}}</td>
-                <td>{{.TutorName}}</td>
-                <td class="status-{{.Status}}">{{.Status}}</td>
+                <td>{{.StartTime}}</td>
                 <td>
                     {{if eq .Status "scheduled"}}
-                    <form action="/api/student/lesson-action" method="POST" style="display:inline;">
-                        <input type="hidden" name="lesson_id" value="{{.ID}}">
-                        <button type="submit" name="action" value="reschedule" class="btn btn-reschedule">Перенос</button>
-                        <button type="submit" name="action" value="cancel" class="btn btn-cancel">Отмена</button>
-                    </form>
+                        <span class="status-badge status-scheduled">Подтверждено</span>
+                    {{else if eq .Status "pending"}}
+                        <span class="status-badge status-pending">На проверке</span>
                     {{else}}
-                    --
+                        <span class="status-badge">{{.Status}}</span>
                     {{end}}
                 </td>
             </tr>
+            {{else}}
+            <tr>
+                <td colspan="4" style="text-align: center; color: #70757a; padding: 30px;">
+                    У вас пока нет активных записей на занятия.
+                </td>
+            </tr>
             {{end}}
-        </table>
-        <br>
-        <a href="/fortutor/">Найти нового репетитора</a>
+        </tbody>
+    </table>
+
+    <div style="margin-top: 30px;">
+        <a href="/logout" style="color: #d93025; text-decoration: none;">Выйти из аккаунта</a>
     </div>
+</div>
+
 </body>
 </html>
