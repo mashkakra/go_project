@@ -517,51 +517,69 @@ func getConfirmedLessons(tutorUsername string) ([]map[string]interface{}, error)
 	return lessons, nil
 }
 func getAllLessonsForAdmin() ([]map[string]interface{}, error) {
-	// Используем LEFT JOIN, чтобы увидеть уроки, даже если слот или репетитор удалены
 	query := `
         SELECT 
-            l.id, 
-            COALESCE(l.student_name, 'Не указано'), 
-            COALESCE(l.status, 'unknown'), 
-            COALESCE(t.last_name, 'Удален'), 
-            COALESCE(ts.date, '0001-01-01'), 
-            COALESCE(ts.start_time, '00:00')
+            l.id, l.student_name, l.student_phone, l.status, l.student_id,
+            t.last_name as tutor_name, 
+            format_lesson_date(ts.date, ts.is_recurring) as schedule_display,
+            ts.start_time, ts.is_recurring,
+            u.username as acc_login,
+            u.password as acc_password
         FROM lessons l
         LEFT JOIN tutors t ON l.tutor_id = t.id
-        LEFT JOIN time_slots ts ON l.timeslot_id = ts.id WHERE l.status='scheduled'
-        ORDER BY l.id DESC
+        LEFT JOIN time_slots ts ON l.timeslot_id = ts.id
+        LEFT JOIN students s ON l.student_id = s.id
+        LEFT JOIN users u ON s.user_id = u.id
+        ORDER BY ts.is_recurring DESC, ts.date DESC
     `
+
 	rows, err := db.Query(context.Background(), query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var allLessons []map[string]interface{}
-
+	var results []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var sName, status, tName, sTime string
-		var date time.Time
+		var sName, sPhone, status, tutorName, scheduleDisplay, startTime string
+		var isRecurring bool
+		var studentID *int
+		var accLogin, accPassword *string
 
-		if err := rows.Scan(&id, &sName, &status, &tName, &date, &sTime); err != nil {
-			fmt.Println("Ошибка Scan:", err)
-			continue
+		err := rows.Scan(
+			&id, &sName, &sPhone, &status, &studentID,
+			&tutorName, &scheduleDisplay, &startTime, &isRecurring,
+			&accLogin, &accPassword,
+		)
+		if err != nil {
+			return nil, err
 		}
 
 		row := map[string]interface{}{
-			"ID":          id,
-			"StudentName": sName,
-			"Status":      status,
-			"TutorName":   tName,
-			"Date":        date.Format("02.01.2006"),
-			"Time":        sTime,
+			"ID":              id,
+			"StudentName":     sName,
+			"StudentPhone":    sPhone,
+			"Status":          status,
+			"TutorName":       tutorName,
+			"ScheduleDisplay": scheduleDisplay, // Теперь здесь строка из SQL функции
+			"StartTime":       startTime,
+			"IsRecurring":     isRecurring,
 		}
-		allLessons = append(allLessons, row)
-	}
 
-	fmt.Printf("Админ: найдено %d записей\n", len(allLessons)) // Проверка в терминале
-	return allLessons, nil
+		if studentID != nil {
+			row["StudentID"] = *studentID
+		}
+		if accLogin != nil {
+			row["AccLogin"] = *accLogin
+		}
+		if accPassword != nil {
+			row["AccPassword"] = *accPassword
+		}
+
+		results = append(results, row)
+	}
+	return results, nil
 }
 
 func cancelLesson(lessonID int) error {
