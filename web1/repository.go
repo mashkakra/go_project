@@ -520,7 +520,7 @@ func getAllLessonsForAdmin() ([]map[string]interface{}, error) {
 	query := `
         SELECT 
             l.id, l.student_name, l.student_phone, l.status, l.student_id,
-            t.last_name as tutor_name, 
+            t.last_name as tutor_name, ts.day_of_week,
             format_lesson_date(ts.date, ts.is_recurring) as schedule_display,
             ts.start_time, ts.is_recurring,
             u.username as acc_login,
@@ -542,14 +542,14 @@ func getAllLessonsForAdmin() ([]map[string]interface{}, error) {
 	var results []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var sName, sPhone, status, tutorName, scheduleDisplay, startTime string
+		var sName, sPhone, status, tutorName, scheduleDisplay, startTime, dayWeek string
 		var isRecurring bool
 		var studentID *int
 		var accLogin, accPassword *string
 
 		err := rows.Scan(
 			&id, &sName, &sPhone, &status, &studentID,
-			&tutorName, &scheduleDisplay, &startTime, &isRecurring,
+			&tutorName, &dayWeek, &scheduleDisplay, &startTime, &isRecurring,
 			&accLogin, &accPassword,
 		)
 		if err != nil {
@@ -563,6 +563,7 @@ func getAllLessonsForAdmin() ([]map[string]interface{}, error) {
 			"Status":          status,
 			"TutorName":       tutorName,
 			"ScheduleDisplay": scheduleDisplay, // Теперь здесь строка из SQL функции
+			"Day":             dayWeek,
 			"StartTime":       startTime,
 			"IsRecurring":     isRecurring,
 		}

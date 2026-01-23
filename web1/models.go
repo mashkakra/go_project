@@ -18,10 +18,14 @@ type Grade struct {
 
 // TimeSlot описывает доступное временное окно для записи
 type TimeSlot struct {
-	ID        int       `json:"id"`
-	Date      time.Time `json:"date"`
-	StartTime string    `json:"start_time"`
-	EndTime   string    `json:"end_time"`
+	ID          int       `json:"id"`
+	TutorID     int       `json:"tutor_id"`
+	Date        time.Time `json:"date"`
+	DayOfWeek   int       `json:"day_of_week"` // 1-7
+	DayName     string    `json:"day_name"`    // "Пн", "Вт" и т.д.
+	StartTime   string    `json:"start_time"`
+	EndTime     string    `json:"end_time"`
+	IsAvailable bool      `json:"is_available"`
 }
 
 // Tutor — основная модель репетитора со всеми связанными данными
