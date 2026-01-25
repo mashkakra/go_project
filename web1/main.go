@@ -31,7 +31,7 @@ func main() {
 	http.HandleFunc("/api/admin/create-user", adminCreateUserHandler)
 	http.HandleFunc("/api/tutor/lesson-action", tutorActionHandler)
 	http.HandleFunc("/api/forgot-password", forgotPasswordHandler)
-	http.HandleFunc("/api/student/lesson-action", lessonActionHandler)
+	http.HandleFunc("/api/student/lesson-act", lessonActionHandler)
 	http.HandleFunc("/api/tutor/confirm-reschedule", confirmRescheduleHandler)
 	http.HandleFunc("/api/tutor/create-and-reschedule", createAndRescheduleHandler)
 	http.HandleFunc("/api/admin/create-student", adminCreateStudentHandler)

@@ -104,6 +104,22 @@
             color: var(--text);
         }
 
+        .btn-danger-outline {
+            background: transparent;
+            color: #d93025;
+            border: 1px solid #f8d7da;
+        }
+        .btn-danger-outline:hover {
+            background: #fff0f0;
+        }
+        .btn-info-outline {
+            background: transparent;
+            color: #1a73e8;
+            border: 1px solid #d2e3fc;
+        }
+        .btn-info-outline:hover {
+            background: #f1f3f4;
+        }
         .page {
             padding: 32px 0 50px;
             display: grid;
@@ -223,6 +239,7 @@
                         <th>Дата занятия</th>
                         <th>Время начала</th>
                         <th>Статус</th>
+                        <th>Управление</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -240,6 +257,27 @@
                                 <span class="status-badge status-other">{{.Status}}</span>
                             {{end}}
                         </td>
+                        <td data-label="Управление">
+                                    {{if eq .Status "scheduled"}}
+                                    <div style="display: flex; gap: 8px;">
+                                        <form action="/api/student/lesson-act" method="POST" style="margin:0;">
+                                            <input type="hidden" name="lesson_id" value="{{.ID}}">
+                                            <button name="action" value="reschedule" class="btn btn-info-outline" style="font-size: 12px; padding: 6px 12px; border-radius: 8px; cursor: pointer;">
+                                                Перенести
+                                            </button>
+                                        </form>
+
+                                        <form action="/api/student/lesson-act" method="POST" style="margin:0;" onsubmit="return confirm('Вы уверены, что хотите отменить занятие?')">
+                                            <input type="hidden" name="lesson_id" value="{{.ID}}">
+                                            <button name="action" value="cancel" class="btn btn-danger-outline" style="font-size: 12px; padding: 6px 12px; border-radius: 8px; cursor: pointer;">
+                                                Отменить
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {{else}}
+                                        <span class="muted" style="font-size: 12px;">—</span>
+                                    {{end}}
+                                </td>
                     </tr>
                     {{else}}
                     <tr>

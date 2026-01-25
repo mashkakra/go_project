@@ -484,8 +484,10 @@ func acceptLesson(lessonID int) error {
 func declineLesson(lessonID int) error {
 	// Просто переводим в статус 'declined'
 	// Слот времени (time_slots) трогать не нужно, он и так был true
-	query := "UPDATE lessons SET status = 'declined' WHERE id = $1"
+	query := "UPDATE lessons SET status = 'cancelled' WHERE id = $1"
 	_, err := db.Exec(context.Background(), query, lessonID)
+	query = "UPDATE time_slots SET is_available = true WHERE id = (select timeslot_id from lessons where id = $1)"
+	_, err = db.Exec(context.Background(), query, lessonID)
 	return err
 }
 func getConfirmedLessons(tutorUsername string) ([]map[string]interface{}, error) {

@@ -329,45 +329,31 @@ func studentDashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 func lessonActionHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
+		log.Println("Ошибка: Метод не POST")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	lessonID, _ := strconv.Atoi(r.FormValue("lesson_id"))
-	action := r.FormValue("action")
+	action := r.FormValue("action") // Проверьте, что тут именно "action"
+
+	log.Printf("Запрос: ID=%d, Action=%s", lessonID, action)
 
 	if action == "cancel" {
-		// Вызываем функцию с транзакцией, которая освободит слот
-		err := cancelLesson(lessonID)
+		err := declineLesson(lessonID)
 		if err != nil {
-			log.Printf("Ошибка отмены: %v", err)
-			http.Error(w, "Ошибка при отмене", 500)
+			log.Printf("Ошибка в БД: %v", err)
+			http.Error(w, "Ошибка БД", 500)
 			return
 		}
+		log.Println("Статус успешно обновлен")
 		http.Redirect(w, r, "/student/dashboard", http.StatusSeeOther)
-	} else if action == "reschedule" {
-		// Перенаправляем на страницу выбора нового времени
-		http.Redirect(w, r, "/student/reschedule?lesson_id="+strconv.Itoa(lessonID), http.StatusSeeOther)
-	}
-}
-
-func bookLessonHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
 		return
 	}
 
-	// В идеале берем из сессии, для теста ID = 1 (ученик)
-	studentID := 1
-	slotID, _ := strconv.Atoi(r.FormValue("slot_id"))
-	tutorID, _ := strconv.Atoi(r.FormValue("tutor_id"))
-
-	err := bookLesson(studentID, tutorID, slotID)
-	if err != nil {
-		http.Error(w, "Не удалось забронировать: "+err.Error(), http.StatusConflict)
-		return
-	}
-
-	// После успешной записи отправляем в личный кабинет ученика
-	http.Redirect(w, r, "/student/dashboard", http.StatusSeeOther)
+	// Если мы попали сюда, значит action не равен "cancel"
+	log.Printf("Action '%s' не обработан, редирект на главную", action)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func tutorActionHandler(w http.ResponseWriter, r *http.Request) {
