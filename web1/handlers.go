@@ -220,13 +220,24 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 3. ПАРОЛЬ ВЕРЕН. Теперь создаем сессию
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_user",
-		Value:    login,
-		Path:     "/",
-		HttpOnly: true, // Защита от XSS (JS не сможет прочитать куку)
-		MaxAge:   3600, // 1 час
-	})
+	if role == "student" {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session_user",
+			Value:    login,
+			Path:     "/", // Оставляем корень, чтобы API тоже видело куку
+			HttpOnly: true,
+		})
+	}
+
+	// Для Репетитора
+	if role == "tutor" {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session_tutor", // МЕНЯЕМ ИМЯ КУКИ ДЛЯ РЕПЕТИТОРА
+			Value:    login,
+			Path:     "/",
+			HttpOnly: true,
+		})
+	}
 
 	// 4. Редирект в зависимости от роли
 	switch role {
@@ -276,7 +287,7 @@ func renderTemplate(w http.ResponseWriter, tmplName string, data interface{}) {
 
 // Кабинет репетитора
 func tutorDashboard(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("session_user")
+	cookie, err := r.Cookie("session_tutor")
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
