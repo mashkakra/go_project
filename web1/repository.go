@@ -249,10 +249,18 @@ func getApplications(tutorUsername string) ([]map[string]interface{}, error) {
 }
 
 // Функция для создания нового пользователя (выдача логина админом)
-func createUser(username, password, role string) error {
-	_, err := db.Exec(context.Background(),
-		"INSERT INTO users (username, password, role) VALUES ($1, $2, $3)",
-		username, password, role)
+// CreateUser создает нового пользователя с захешированным паролем
+func CreateUser(ctx context.Context, username, plainPassword, role string) error {
+	// 1. Хешируем пароль
+	hashedPassword, err := HashPassword(plainPassword)
+	if err != nil {
+		return err
+	}
+
+	// 2. Сохраняем в базу (безопасно, через $1, $2, $3)
+	query := `INSERT INTO users (username, password, role) VALUES ($1, $2, $3)`
+	_, err = db.Exec(ctx, query, username, hashedPassword, role)
+
 	return err
 }
 
@@ -721,43 +729,48 @@ func createAndAssignNewSlot(lessonID int, tutorUsername string, date string, tim
 	return tx.Commit(ctx)
 }
 
-func CreateStudentAccountFromLesson(lessonID int, login, password string) error {
-	ctx := context.Background()
+func CreateStudent(ctx context.Context, lessonID int, login, password string) error {
+	// 1. Хешируем пароль
+	hashedPassword, err := HashPassword(password)
+	if err != nil {
+		return err
+	}
+
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
 
-	// 1. Берем данные ученика из заявки (урока)
+	// 2. Достаем данные ученика, которые уже были в уроке
 	var name, phone string
 	err = tx.QueryRow(ctx, "SELECT student_name, student_phone FROM lessons WHERE id = $1", lessonID).Scan(&name, &phone)
 	if err != nil {
-		return fmt.Errorf("lesson not found: %v", err)
+		return fmt.Errorf("урок не найден: %v", err)
 	}
 
-	// 2. Создаем запись в таблице users (роль 'student')
+	// 3. Создаем запись в users
 	var userID int
 	err = tx.QueryRow(ctx,
 		"INSERT INTO users (username, password, role) VALUES ($1, $2, 'student') RETURNING id",
-		login, password).Scan(&userID)
+		login, hashedPassword).Scan(&userID)
 	if err != nil {
-		return fmt.Errorf("failed to create user: %v", err)
+		return fmt.Errorf("ошибка создания аккаунта (возможно, логин занят): %v", err)
 	}
 
-	// 3. Создаем профиль в таблице students
+	// 4. Создаем профиль в students
 	var studentID int
 	err = tx.QueryRow(ctx,
 		"INSERT INTO students (user_id, full_name, phone) VALUES ($1, $2, $3) RETURNING id",
 		userID, name, phone).Scan(&studentID)
 	if err != nil {
-		return fmt.Errorf("failed to create student profile: %v", err)
+		return fmt.Errorf("ошибка создания профиля студента: %v", err)
 	}
 
-	// 4. Привязываем урок к этому ученику
+	// 5. Привязываем созданного студента к уроку
 	_, err = tx.Exec(ctx, "UPDATE lessons SET student_id = $1 WHERE id = $2", studentID, lessonID)
 	if err != nil {
-		return fmt.Errorf("failed to link lesson: %v", err)
+		return fmt.Errorf("ошибка привязки урока: %v", err)
 	}
 
 	return tx.Commit(ctx)

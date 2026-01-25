@@ -3,86 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <title>Вход в систему — TutorBooking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4a90e2;
-            --dark: #333;
-            --gray: #f4f7f6;
+            --bg: #f7f6f2;
+            --surface: #ffffff;
+            --text: #1e1f22;
+            --muted: #6b6f76;
+            --accent: #5aa9e6;
+            --accent-dark: #4b92c9;
+            --border: #ece6dc;
+            --shadow: 0 12px 30px rgba(25, 25, 25, 0.08);
+            --glow: 0 12px 26px rgba(90, 169, 230, 0.35);
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
         }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--gray);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: var(--bg);
             margin: 0;
         }
-        .login-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-        .login-card h2 {
-            text-align: center;
-            color: var(--dark);
-            margin-bottom: 1.5rem;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #666;
-        }
-        input {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-sizing: border-box; /* Чтобы padding не раздувал ширину */
-        }
-        button {
-            width: 100%;
-            padding: 0.8rem;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background-color: #357abd;
-        }
-        .footer-links {
-            margin-top: 1rem;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-        .footer-links a {
-            color: var(--primary);
+
+        a {
+            color: inherit;
             text-decoration: none;
         }
-        /* Стили для модального окна (плашки) */
+
+        .container {
+            width: min(1120px, 92vw);
+            margin: 0 auto;
+        }
+
+        .site-header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .site-header__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 0;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        .brand__badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--accent);
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #1a1a1a;
+            box-shadow: var(--glow);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .page {
+            min-height: calc(100vh - 76px);
+            display: grid;
+            place-items: center;
+            padding: 40px 0 60px;
+        }
+
+        .login-card {
+            background: var(--surface);
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            width: min(440px, 92vw);
+            display: grid;
+            gap: 16px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .login-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 36px rgba(25, 25, 25, 0.12);
+        }
+
+        .login-card h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .form-group {
+            display: grid;
+            gap: 8px;
+        }
+
+        label {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+        }
+
+        .actions {
+            display: grid;
+            gap: 10px;
+        }
+
+        .footer-links {
+            text-align: center;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .footer-links a {
+            color: var(--text);
+            font-weight: 600;
+        }
+
         #forgotModal {
             display: none;
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 0 50px rgba(0,0,0,0.3);
+            background: var(--surface);
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
             z-index: 1000;
-            width: 320px;
+            width: min(360px, 90vw);
+            gap: 12px;
         }
+
         .overlay {
             display: none;
             position: fixed;
@@ -90,41 +187,63 @@
             background: rgba(0,0,0,0.5);
             z-index: 999;
         }
+
+        @media (max-width: 720px) {
+            .site-header__inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
+    <header class="site-header">
+        <div class="container site-header__inner">
+            <div class="brand">
+                <div class="brand__badge">T</div>
+                <span>Тринити</span>
+            </div>
+            <a class="btn btn-ghost" href="/">На главную</a>
+        </div>
+    </header>
 
-<div class="login-card">
-    <h2>Вход в систему</h2>
-    <form action="/api/login" method="POST">
-        <div class="form-group">
-            <label>Логин</label>
-            <input type="text" name="login" required placeholder="Ваш уникальный логин">
+    <main class="page">
+        <div class="login-card">
+            <h2>Вход в кабинет</h2>
+            <p style="margin: 0; color: var(--muted);">Введите логин и пароль, выданные администратором.</p>
+            <form action="/api/login" method="POST" class="actions">
+                <div class="form-group">
+                    <label>Логин</label>
+                    <input type="text" name="login" required placeholder="Ваш логин">
+                </div>
+                <div class="form-group">
+                    <label>Пароль (8 символов)</label>
+                    <input type="password" name="password"
+                           required
+                           minlength="8"
+                           maxlength="8"
+                           placeholder="••••••••"
+                           oninvalid="this.setCustomValidity('Пароль должен содержать ровно 8 символов')"
+                           oninput="this.setCustomValidity('')">
+                </div>
+                <button class="btn btn-primary" type="submit">Войти</button>
+            </form>
+
+            <div class="footer-links">
+                <span>Забыли пароль? </span>
+                <a href="#" onclick="showModal()">Напишите админу</a>
+            </div>
         </div>
-        <div class="form-group">
-            <label>Пароль (8 символов)</label>
-            <input type="password" name="password" 
-                   required 
-                   minlength="8" 
-                   maxlength="8" 
-                   placeholder="••••••••">
-        </div>
-        <button type="submit">Войти</button>
-    </form>
-    
-    <div class="footer-links">
-        <a href="#" onclick="showModal()">Забыли пароль?</a>
+    </main>
+
+    <div class="overlay" id="overlay" onclick="hideModal()"></div>
+    <div id="forgotModal">
+        <h3 style="margin: 0;">Восстановление</h3>
+        <p style="margin: 0; font-size: 14px; color: var(--muted);">Введите ваш логин, и мы отправим запрос администратору.</p>
+        <input type="text" id="forgotLogin" placeholder="Логин">
+        <button class="btn btn-primary" onclick="sendForgotRequest()">Отправить запрос</button>
+        <button class="btn btn-ghost" onclick="hideModal()">Отмена</button>
     </div>
-</div>
-
-<div class="overlay" id="overlay" onclick="hideModal()"></div>
-<div id="forgotModal">
-    <h3>Восстановление</h3>
-    <p style="font-size: 0.8rem; color: #666;">Введите ваш логин, и мы отправим запрос администратору.</p>
-    <input type="email" id="forgotEmail" placeholder="Логин" style="margin-bottom: 1rem;">
-    <button onclick="sendForgotRequest()">Отправить запрос</button>
-    <button onclick="hideModal()" style="background: #ccc; margin-top: 0.5rem;">Отмена</button>
-</div>
 
 <script>
     function showModal() {
@@ -138,11 +257,11 @@
     }
 
     async function sendForgotRequest() {
-        const email = document.getElementById('forgotEmail').value;
-        if (!email) return alert("Введите email");
+        const login = document.getElementById('forgotLogin').value;
+        if (!login) return alert("Введите ваш логин");
 
         const formData = new FormData();
-        formData.append('email', email);
+        formData.append('login', login);
 
         const response = await fetch('/api/forgot-password', {
             method: 'POST',
@@ -156,15 +275,6 @@
             alert("Ошибка при отправке.");
         }
     }
-    async function sendForgotRequest() {
-    const login = document.getElementById('forgotLogin').value; // Поменяйте ID поля в HTML
-    if (!login) return alert("Введите ваш логин");
-
-    const formData = new FormData();
-    formData.append('login', login); // Отправляем логин вместо email
-
-    // ... далее ваш fetch как был раньше
-}
 </script>
 
 </body>

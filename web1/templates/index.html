@@ -4,39 +4,271 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Центр репетиторов</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f7f6f2;
+            --surface: #ffffff;
+            --text: #1e1f22;
+            --muted: #6b6f76;
+            --accent: #5aa9e6;
+            --accent-dark: #4b92c9;
+            --border: #ece6dc;
+            --shadow: 0 12px 30px rgba(25, 25, 25, 0.08);
+            --glow: 0 12px 26px rgba(90, 169, 230, 0.35);
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .container {
+            width: min(1120px, 92vw);
+            margin: 0 auto;
+        }
+
+        .site-header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .site-header__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 0;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        .brand__badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--accent);
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #1a1a1a;
+            box-shadow: var(--glow);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .hero {
+            padding: 40px 0 28px;
+        }
+
+        .hero-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 36px;
+            box-shadow: var(--shadow);
+            display: grid;
+            gap: 18px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hero-card h1 {
+            margin: 0;
+            font-size: clamp(28px, 3vw, 40px);
+        }
+
+        .hero-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            padding: 24px 0 40px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 18px 36px rgba(25, 25, 25, 0.12);
+        }
+
+        .card h3 {
+            margin-top: 0;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .subjects {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .chip {
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: #fff6df;
+            border: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .cta {
+            background: #fffdf7;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 40px;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 32px rgba(25, 25, 25, 0.12);
+        }
+
+        @media (max-width: 720px) {
+            .site-header__inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .hero-card {
+                padding: 24px;
+            }
+
+            .cta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
-    <a href="/login" style="padding: 10px 20px; background: #4a90e2; color: white; border-radius: 5px; text-decoration: none;">Войти в кабинет</a>
-    <h1>Центр репетиторов "Знание"</h1>
-    
-    <h2>Контактная информация</h2>
-    
-    <h3>Адрес:</h3>
-    <p>г. Москва, ул. Образовательная, д. 15</p>
-    
-    <h3>Телефон:</h3>
-    <p>+7 (495) 123-45-67</p>
-    
-    <h3>Email:</h3>
-    <p>info@znanie-tutor.ru</p>
-    
-    <h3>Режим работы:</h3>
-    <p>Пн-Пт: 9:00 - 20:00</p>
-    <p>Сб-Вс: 10:00 - 18:00</p>
-    
-    <h3>Предметы:</h3>
-    <ul>
-        <li>Математика</li>
-        <li>Русский язык</li>
-        <li>Английский язык</li>
-        <li>Физика</li>
-        <li>Химия</li>
-        <li>История</li>
-    </ul>
-    
-    <br>
-    <a href="/fortutor/">
-        <button>Записаться на занятие</button>
-    </a>
+    <header class="site-header">
+        <div class="container site-header__inner">
+            <div class="brand">
+                <div class="brand__badge">T</div>
+                <span>Тринити</span>
+            </div>
+            <div class="header-actions">
+                <a class="btn btn-ghost" href="/login">Войти в кабинет</a>
+                <a class="btn btn-primary" href="/fortutor/">Записаться</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-card">
+                    <h1>Персональные занятия для уверенного результата</h1>
+                    <p>Подберите репетитора по предмету, уровню и удобному времени. Мы помогаем готовиться к экзаменам, подтягивать школьную программу и развивать интерес к учебе.</p>
+                    <div class="actions-row">
+                        <a class="btn btn-primary" href="/fortutor/">Подобрать репетитора</a>
+                        <a class="btn btn-ghost" href="/login">Личный кабинет</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="container section-grid">
+            <div class="card">
+                <h3>Контакты</h3>
+                <p class="muted">г. Москва, ул. Образовательная, д. 15</p>
+                <p>+7 (495) 123-45-67</p>
+                <p>info@znanie-tutor.ru</p>
+            </div>
+            <div class="card">
+                <h3>Режим работы</h3>
+                <p class="muted">Пн–Пт: 9:00 – 20:00</p>
+                <p class="muted">Сб–Вс: 10:00 – 18:00</p>
+                <p>Онлайн-занятия доступны ежедневно.</p>
+            </div>
+            <div class="card">
+                <h3>Популярные предметы</h3>
+                <div class="subjects">
+                    <span class="chip">Математика</span>
+                    <span class="chip">Русский язык</span>
+                    <span class="chip">Английский язык</span>
+                    <span class="chip">Физика</span>
+                    <span class="chip">Химия</span>
+                    <span class="chip">История</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="container cta">
+            <div>
+                <h3>Готовы начать?</h3>
+                <p class="muted">Сформируйте заявку — подберем преподавателя под ваш график.</p>
+            </div>
+            <a class="btn btn-primary" href="/fortutor/">Записаться на занятие</a>
+        </section>
+    </main>
 </body>
 </html>

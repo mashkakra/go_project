@@ -3,119 +3,341 @@
 <head>
     <meta charset="UTF-8">
     <title>Панель администратора</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4a90e2;
-            --success: #27ae60;
-            --warning: #f39c12;
-            --danger: #e74c3c;
-            --bg: #f4f7f6;
-            --text: #2c3e50;
+            --bg: #f7f6f2;
+            --surface: #ffffff;
+            --text: #1e1f22;
+            --muted: #6b6f76;
+            --accent: #5aa9e6;
+            --accent-dark: #4b92c9;
+            --border: #ece6dc;
+            --shadow: 0 12px 30px rgba(25, 25, 25, 0.08);
+            --glow: 0 12px 26px rgba(90, 169, 230, 0.35);
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
         }
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        
-        h1, h2, h3 { color: #34495e; }
+        * {
+            box-sizing: border-box;
+        }
 
-        .section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        body {
+            margin: 0;
+            font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+            color: var(--text);
+            background: var(--bg);
+        }
 
-        /* Таблица */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { background: #f8f9fa; text-align: left; padding: 12px; border-bottom: 2px solid #dee2e6; color: #7f8c8d; }
-        td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        tr:hover { background: #f9f9f9; }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
 
-        /* Статусы */
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-scheduled { background: #d4edda; color: #155724; }
+        .container {
+            width: min(1120px, 92vw);
+            margin: 0 auto;
+        }
 
-        /* Карточка аккаунта */
-        .account-box { background: #ebf5ff; border: 1px solid #bddbff; padding: 8px; border-radius: 6px; font-size: 0.9em; min-width: 150px; }
-        .account-box small { color: #5dade2; display: block; margin-bottom: 2px; }
-        
-        /* Формы */
-        input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; outline: none; }
-        input:focus { border-color: var(--primary); }
-        
-        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: 0.2s; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-success:hover { background: #219150; }
-        .btn-primary { background: var(--primary); color: white; }
+        .site-header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
 
-        .notif-list { list-style: none; padding: 0; }
-        .notif-item { background: #fff; border-left: 4px solid var(--danger); padding: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .site-header__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 0;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        .brand__badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--accent);
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #1a1a1a;
+            box-shadow: var(--glow);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-success {
+            background: #e6f4ea;
+            color: #1e8e3e;
+            border: 1px solid #cbe8d5;
+        }
+
+        .page {
+            padding: 32px 0 50px;
+            display: grid;
+            gap: 24px;
+        }
+
+        .panel {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .panel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 36px rgba(25, 25, 25, 0.12);
+        }
+
+        .panel h1 {
+            margin: 0 0 8px;
+            font-size: 26px;
+        }
+
+        .panel h2 {
+            margin: 0 0 16px;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .notif-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 12px;
+        }
+
+        .notif-item {
+            background: #fffdf7;
+            border: 1px solid var(--border);
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        th {
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-pending { background: #fef7e0; color: #b26a00; }
+        .status-scheduled { background: #e6f4ea; color: #1e8e3e; }
+
+        .account-box {
+            background: #f5f4ef;
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+        }
+
+        .account-box small {
+            display: block;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .inline-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        input, select {
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            outline: none;
+            font-size: 13px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        @media (max-width: 960px) {
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                padding: 12px;
+                margin-bottom: 12px;
+                background: #fff;
+            }
+
+            td {
+                border: none;
+                padding: 6px 0;
+            }
+
+            td::before {
+                content: attr(data-label);
+                display: block;
+                color: var(--muted);
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
+    <header class="site-header">
+        <div class="container site-header__inner">
+            <div class="brand">
+                <div class="brand__badge">T</div>
+                <span>Тринити</span>
+            </div>
+            <a class="btn btn-ghost" href="/">На главную</a>
+        </div>
+    </header>
 
-<div class="container">
-    <h1>🛡️ Панель администратора</h1>
+    <main class="container page">
+        <section class="panel">
+            <h1>Панель администратора</h1>
+            <p class="muted">Управляйте заявками, доступами и техническими аккаунтами.</p>
+        </section>
 
-    <div class="section">
-        <h2>🔔 Запросы на восстановление пароля</h2>
-        <ul class="notif-list">
-            {{range .Notifications}}
-            <li class="notif-item">
-                <span><strong>[{{.Time}}]</strong> {{.Message}}</span>
-                <button class="btn" style="background: #eee;">Выполнено</button>
-            </li>
-            {{else}}
-            <p style="color: #999;">Новых уведомлений нет</p>
-            {{end}}
-        </ul>
-    </div>
+        <section class="panel">
+            <h2>Запросы на восстановление пароля</h2>
+            <ul class="notif-list">
+                {{range .Notifications}}
+                <li class="notif-item">
+                    <span><strong>[{{.Time}}]</strong> {{.Message}}</span>
+                    <button class="btn btn-ghost" type="button">Выполнено</button>
+                </li>
+                {{else}}
+                <p class="muted">Новых уведомлений нет</p>
+                {{end}}
+            </ul>
+        </section>
 
-    <div class="section">
-        <h2>📚 Все записи на занятия</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Ученик / Телефон</th>
-                    <th>Репетитор</th>
-                    <th>Дата и время</th>
-                    <th>Статус</th>
-                    <th>Доступ в кабинет</th>
-                </tr>
-            </thead>
+        <section class="panel">
+            <h2>Все записи на занятия</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ученик / Телефон</th>
+                        <th>Репетитор</th>
+                        <th>Дата и время</th>
+                        <th>Статус</th>
+                        <th>Доступ в кабинет</th>
+                    </tr>
+                </thead>
                 <tbody>
                     {{range .AllLessons}}
                     <tr>
-                        <td>
+                        <td data-label="Ученик / Телефон">
                             <strong>{{.StudentName}}</strong><br>
-                            <small style="color: #666;">{{.StudentPhone}}</small>
+                            <small class="muted">{{.StudentPhone}}</small>
                         </td>
-
-                        <td>{{.TutorName}}</td>
-
-                        <td>
-                            <div style="font-weight: 600; color: #2c3e50;">{{.Day}}</div>
-                            <div style="color: #4a90e2; font-size: 0.9em;">🕓 в {{.StartTime}}</div>
+                        <td data-label="Репетитор">{{.TutorName}}</td>
+                        <td data-label="Дата и время">
+                            <div style="font-weight: 600;">{{.Day}}</div>
+                            <div class="muted">в {{.StartTime}}</div>
                             {{if .IsRecurring}}
-                                <span style="font-size: 10px; color: #27ae60; background: #e6f4ea; padding: 2px 5px; border-radius: 3px;">🔁 ЕЖЕНЕДЕЛЬНО</span>
+                                <span class="badge status-scheduled">Еженедельно</span>
                             {{else}}
-                                <span style="font-size: 10px; color: #e67e22; background: #fef1e6; padding: 2px 5px; border-radius: 3px;">📅 РАЗОВО</span>
+                                <span class="badge status-pending">Разово</span>
                             {{end}}
                         </td>
-
-                        <td>
+                        <td data-label="Статус">
                             <span class="badge {{if eq .Status "pending"}}status-pending{{else}}status-scheduled{{end}}">
                                 {{.Status}}
                             </span>
                         </td>
-
-                        <td>
+                        <td data-label="Доступ в кабинет">
                             {{if .StudentID}}
                                 <div class="account-box">
                                     <small>Доступ выдан:</small>
                                     <strong>L:</strong> {{.AccLogin}} | <strong>P:</strong> {{.AccPassword}}
                                 </div>
                             {{else}}
-                                <form action="/api/admin/create-student" method="POST" style="display: flex; gap: 5px;">
+                                <form action="/api/admin/create-student" method="POST" class="inline-form">
                                     <input type="hidden" name="lesson_id" value="{{.ID}}">
-                                    <input type="text" name="login" placeholder="Логин" required style="width: 80px;">
-                                    <input type="text" name="password" placeholder="Пароль" required style="width: 80px;">
+                                    <input type="hidden" name="role" value="student">
+                                    <input type="text" name="new_login" placeholder="Логин" required>
+                                    <input type="text" name="new_password" placeholder="Пароль" required
+                                           minlength="8" maxlength="8"
+                                           oninvalid="this.setCustomValidity('Пароль должен содержать ровно 8 символов')"
+                                           oninput="this.setCustomValidity('')">
                                     <button type="submit" class="btn btn-success">Выдать</button>
                                 </form>
                             {{end}}
@@ -123,26 +345,27 @@
                     </tr>
                     {{else}}
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 30px; color: #999;">В базе нет ни одного урока.</td>
+                        <td colspan="5" style="text-align: center; padding: 30px;" class="muted">В базе нет ни одного урока.</td>
                     </tr>
                     {{end}}
                 </tbody>
-        </table>
-    </div>
+            </table>
+        </section>
 
-    <div class="section">
-        <h3>🆕 Создать технический аккаунт</h3>
-        <form action="/api/admin/create-user" method="POST" style="display: flex; gap: 15px; align-items: center;">
-            <input type="text" name="new_login" placeholder="Логин" required>
-            <input type="text" name="new_password" placeholder="Пароль (8 симв.)" minlength="8" required>
-            <select name="role">
-                <option value="tutor">Репетитор</option>
-                <option value="student">Ученик</option>
-            </select>
-            <button type="submit" class="btn btn-primary">Создать пользователя</button>
-        </form>
-    </div>
-</div>
-
+        <section class="panel">
+            <h2>Создать технический аккаунт</h2>
+            <form action="/api/admin/create-user" method="POST" class="form-row">
+                <input type="text" name="new_login" placeholder="Логин" required>
+                <input type="text" name="new_password" placeholder="Пароль (8 симв.)" minlength="8" required
+                       oninvalid="this.setCustomValidity('Пароль должен содержать ровно 8 символов')"
+                       oninput="this.setCustomValidity('')">
+                <select name="role">
+                    <option value="tutor">Репетитор</option>
+                    <option value="student">Ученик</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Создать пользователя</button>
+            </form>
+        </section>
+    </main>
 </body>
 </html>

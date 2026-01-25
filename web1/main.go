@@ -1,11 +1,14 @@
 package main
 
 import (
+	//	"fmt"
 	"log"
 	"net/http"
 )
 
 func main() {
+	//	h, _ := HashPassword("admin777")
+	//	fmt.Println("HASH:", h)
 	// 1. Инициализируем базу данных (из config.go)
 	initDB()
 	defer db.Close()
@@ -25,13 +28,13 @@ func main() {
 	http.HandleFunc("/api/application", submitApplicationHandler)
 	http.HandleFunc("/api/add-slot", addTestSlotHandler)
 	http.HandleFunc("/api/login", loginHandler)
-	http.HandleFunc("/api/admin/create-user", createUserHandler)
-	http.HandleFunc("/api/admin/create-student", adminCreateStudentHandler)
+	http.HandleFunc("/api/admin/create-user", adminCreateUserHandler)
 	http.HandleFunc("/api/tutor/lesson-action", tutorActionHandler)
 	http.HandleFunc("/api/forgot-password", forgotPasswordHandler)
 	http.HandleFunc("/api/student/lesson-action", lessonActionHandler)
 	http.HandleFunc("/api/tutor/confirm-reschedule", confirmRescheduleHandler)
 	http.HandleFunc("/api/tutor/create-and-reschedule", createAndRescheduleHandler)
+	http.HandleFunc("/api/admin/create-student", adminCreateStudentHandler)
 
 	// 3. Запуск сервера
 	port := ":8080"

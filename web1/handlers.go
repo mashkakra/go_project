@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -190,34 +191,44 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	login := r.FormValue("login")       // Получаем логин
-	password := r.FormValue("password") // Получаем пароль
+	login := r.FormValue("login")
+	password := r.FormValue("password")
 
-	// Валидация: пароль должен быть ровно 8 символов
-	if len(password) != 8 {
-		http.Error(w, "Пароль должен содержать ровно 8 символов", http.StatusBadRequest)
-		return
-	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_user", // Имя должно быть ОДИНАКОВЫМ везде
-		Value:    login,
-		Path:     "/",  // Доступно во всем приложении
-		HttpOnly: true, // Защита от кражи скриптами
-		MaxAge:   3600, // Живет 1 час
-	})
+	// 1. Достаем из базы хешированный пароль и роль пользователя
+	var storedHash string
 	var role string
-	// Ищем пользователя по логину и паролю
-	err := db.QueryRow(r.Context(),
-		"SELECT role FROM users WHERE username=$1 AND password=$2",
-		login, password).Scan(&role)
 
+	// Ищем пользователя только по username
+	err := db.QueryRow(r.Context(),
+		"SELECT password, role FROM users WHERE username=$1",
+		login).Scan(&storedHash, &role)
+	storedHash = strings.TrimSpace(storedHash)
 	if err != nil {
-		// Если не нашли — возвращаем на страницу входа с ошибкой
+		// Если пользователь не найден (или ошибка БД)
 		http.Redirect(w, r, "/login?error=auth", http.StatusSeeOther)
 		return
 	}
 
-	// Редирект в зависимости от роли
+	// 2. Сравниваем введенный пароль с хешем из базы
+	// Используем ту самую функцию CheckPasswordHash из auth.go
+	log.Printf("Сверяем пароли: Введено [%s], В базе [%s]", password, storedHash)
+	if !CheckPasswordHash(password, storedHash) {
+		// Если пароль не подошел
+		http.Redirect(w, r, "/login?error=auth", http.StatusSeeOther)
+		log.Printf("no")
+		return
+	}
+
+	// 3. ПАРОЛЬ ВЕРЕН. Теперь создаем сессию
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_user",
+		Value:    login,
+		Path:     "/",
+		HttpOnly: true, // Защита от XSS (JS не сможет прочитать куку)
+		MaxAge:   3600, // 1 час
+	})
+
+	// 4. Редирект в зависимости от роли
 	switch role {
 	case "admin":
 		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
@@ -293,31 +304,6 @@ func tutorDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderTemplate(w, "tutor_dashboard.html", data)
-}
-func createUserHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
-
-	newLogin := r.FormValue("new_login")
-	newPass := r.FormValue("new_password")
-	role := r.FormValue("role")
-
-	// Валидация пароля (ровно 8 символов)
-	if len(newPass) != 8 {
-		http.Error(w, "Пароль должен быть строго 8 символов", http.StatusBadRequest)
-		return
-	}
-
-	err := createUser(newLogin, newPass, role)
-	if err != nil {
-		http.Error(w, "Ошибка создания: возможно логин занят", http.StatusInternalServerError)
-		return
-	}
-
-	// Возвращаемся обратно в админку
-	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 }
 
 // Страница кабинета ученика
@@ -475,23 +461,65 @@ func createAndRescheduleHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/tutor/dashboard", http.StatusSeeOther)
 }
 
+func adminCreateUserHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	// Читаем данные из формы (имена должны совпадать с name="..." в HTML)
+	login := r.FormValue("new_login")       // Было name="new_login"
+	password := r.FormValue("new_password") // Было name="new_password"
+	role := r.FormValue("role")             // Было name="role"
+	// Логируем для проверки в терминале
+	log.Printf("Получены данные из формы: login=%s, role=%s", login, role)
+
+	if login == "" || password == "" {
+		http.Error(w, "Логин и пароль обязательны", http.StatusBadRequest)
+		return
+	}
+
+	// Вызываем функцию создания пользователя (с хешированием внутри)
+	err := CreateUser(r.Context(), login, password, role)
+	if err != nil {
+		log.Printf("Ошибка при создании пользователя в БД: %v", err)
+		http.Error(w, "Ошибка: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Пользователь %s успешно создан!", login)
+
+	// Возвращаемся обратно в админку
+	http.Redirect(w, r, "/admin/dashboard?success=user_created", http.StatusSeeOther)
+}
+
 func adminCreateStudentHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 		return
 	}
 
-	lessonID, _ := strconv.Atoi(r.FormValue("lesson_id"))
-	login := r.FormValue("login")
-	password := r.FormValue("password")
+	// Получаем данные из вашей HTML-формы
+	lessonIDStr := r.FormValue("lesson_id")
+	login := r.FormValue("new_login")
+	password := r.FormValue("new_password")
 
-	err := CreateStudentAccountFromLesson(lessonID, login, password)
-	if err != nil {
-		log.Printf("Error creating student: %v", err)
-		http.Error(w, "Ошибка при создании аккаунта", 500)
+	lessonID, err := strconv.Atoi(lessonIDStr)
+	if err != nil || login == "" || password == "" {
+		http.Error(w, "Некорректные данные формы", http.StatusBadRequest)
 		return
 	}
 
-	// Возвращаемся в панель админа
-	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+	// Вызываем нашу функцию
+	err = CreateStudent(r.Context(), lessonID, login, password)
+	if err != nil {
+		log.Printf("Ошибка выдачи доступа: %v", err)
+		http.Error(w, "Ошибка: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Доступ выдан! Ученик: %s, Урок ID: %d", login, lessonID)
+
+	// Возвращаемся в админку
+	http.Redirect(w, r, "/admin/dashboard?success=access_granted", http.StatusSeeOther)
 }
