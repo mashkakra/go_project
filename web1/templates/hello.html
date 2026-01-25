@@ -460,10 +460,19 @@
                 let slotsHtml = '';
                 if (tutor.time_slots && tutor.time_slots.length > 0) {
                     slotsHtml = tutor.time_slots.map(slot => {
-                        const date = new Date(slot.date).toLocaleDateString('ru-RU');
-                        // При нажатии на время вызываем selectSlot
-                        return `<button class="slot-btn" onclick="selectSlot(${tutor.id}, ${slot.id}, '${tutor.full_name}', '${date} ${slot.start_time}')">
-                                    ${date} ${slot.start_time}
+                        const dateObj = new Date(slot.date);
+                        
+                        // Получаем день недели (например, "понедельник")
+                        const weekday = dateObj.toLocaleDateString('ru-RU', { weekday: 'long' });
+                        // Делаем первую букву заглавной
+                        const weekdayCapitalized = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+                        
+                        // Оставляем обычную дату для передачи в функцию selectSlot (чтобы в alert была дата)
+                        const dateNumeric = dateObj.toLocaleDateString('ru-RU');
+
+                        // В тексте кнопки теперь weekdayCapitalized вместо dateNumeric
+                        return `<button class="slot-btn" onclick="selectSlot(${tutor.id}, ${slot.id}, '${tutor.full_name}', '${dateNumeric} ${slot.start_time}')">
+                                    ${weekdayCapitalized}, ${slot.start_time}
                                 </button>`;
                     }).join(' ');
                 } else {

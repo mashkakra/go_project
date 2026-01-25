@@ -229,7 +229,7 @@
                     {{range .AllLessons}}
                     <tr>
                         <td data-label="Репетитор"><strong>{{.TutorName}}</strong></td>
-                        <td data-label="Дата">{{.Date}}</td>
+                        <td data-label="Дата">{{.DayWeek}}</td>
                         <td data-label="Время">{{.StartTime}}</td>
                         <td data-label="Статус">
                             {{if eq .Status "scheduled"}}

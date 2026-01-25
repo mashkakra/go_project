@@ -273,7 +273,7 @@ func getStudentLessons(username string) ([]map[string]interface{}, error) {
             l.status, 
             t.first_name || ' ' || t.last_name as tutor_name, 
             ts.date, 
-            ts.start_time
+            ts.start_time, ts.day_of_week
         FROM lessons l
         JOIN students s ON l.student_id = s.id
         JOIN users u ON s.user_id = u.id
@@ -294,10 +294,10 @@ func getStudentLessons(username string) ([]map[string]interface{}, error) {
 	var lessons []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var status, tutorName, startTime string
+		var status, tutorName, startTime, dayWeek string
 		var date time.Time
 
-		if err := rows.Scan(&id, &status, &tutorName, &date, &startTime); err != nil {
+		if err := rows.Scan(&id, &status, &tutorName, &date, &startTime, &dayWeek); err != nil {
 			log.Printf("Ошибка Scan в getStudentLessons: %v", err)
 			continue
 		}
@@ -308,6 +308,7 @@ func getStudentLessons(username string) ([]map[string]interface{}, error) {
 			"Date":      date.Format("02.01.2006"),
 			"StartTime": startTime,
 			"Status":    status,
+			"DayWeek":   dayWeek,
 		})
 	}
 	log.Printf("Найдено уроков для ученика %s: %d", username, len(lessons))
@@ -326,7 +327,7 @@ func getTutorLessons(tutorUsername string) ([]map[string]interface{}, error) {
             l.id, 
             l.student_name, 
             ts.date, 
-            ts.start_time
+            ts.start_time, ts.day_of_week
         FROM lessons l
         JOIN tutors t ON l.tutor_id = t.id
         JOIN time_slots ts ON l.timeslot_id = ts.id
@@ -341,10 +342,10 @@ func getTutorLessons(tutorUsername string) ([]map[string]interface{}, error) {
 	var lessons []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var name, startTime string
+		var name, startTime, dayWeek string
 		var dateRaw interface{} // Используем interface{}, чтобы не упасть на типе DATE
 
-		if err := rows.Scan(&id, &name, &dateRaw, &startTime); err != nil {
+		if err := rows.Scan(&id, &name, &dateRaw, &startTime, &dayWeek); err != nil {
 			// Если ошибка здесь, вы увидите её в терминале
 			log.Printf("!!! Ошибка сканирования строки: %v", err)
 			continue
@@ -363,6 +364,7 @@ func getTutorLessons(tutorUsername string) ([]map[string]interface{}, error) {
 			"StudentName": name,
 			"Date":        dateStr,
 			"StartTime":   startTime,
+			"DayWeek":     dayWeek,
 		})
 	}
 
@@ -489,7 +491,7 @@ func declineLesson(lessonID int) error {
 func getConfirmedLessons(tutorUsername string) ([]map[string]interface{}, error) {
 	// ПОРЯДОК: 1.id, 2.student_name, 3.student_phone, 4.date, 5.start_time
 	query := `
-        SELECT l.id, l.student_name, l.student_phone, ts.date, ts.start_time
+        SELECT l.id, l.student_name, l.student_phone, ts.date, ts.start_time, ts.day_of_week
         FROM lessons l
         JOIN tutors t ON l.tutor_id = t.id
         JOIN time_slots ts ON l.timeslot_id = ts.id
@@ -504,11 +506,11 @@ func getConfirmedLessons(tutorUsername string) ([]map[string]interface{}, error)
 	var lessons []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var name, phone, startTime string
+		var name, phone, startTime, dayWeek string
 		var date time.Time
 
 		// СТРОГО соблюдаем порядок из SELECT выше!
-		err := rows.Scan(&id, &name, &phone, &date, &startTime)
+		err := rows.Scan(&id, &name, &phone, &date, &startTime, &dayWeek)
 		if err != nil {
 			return nil, err
 		}
@@ -520,6 +522,7 @@ func getConfirmedLessons(tutorUsername string) ([]map[string]interface{}, error)
 			"Date":         date.Format("02.01.2006"),
 			"StartTime":    startTime,
 			"Status":       "scheduled",
+			"DayWeek":      dayWeek,
 		})
 	}
 	return lessons, nil

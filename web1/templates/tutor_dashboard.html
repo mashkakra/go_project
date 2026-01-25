@@ -258,7 +258,7 @@
                     <tr>
                         <td data-label="Ученик">{{.StudentName}}</td>
                         <td data-label="Телефон">{{.StudentPhone}}</td>
-                        <td data-label="Дата">{{.Date}}</td>
+                        <td data-label="Дата">{{.DayWeek}}</td>
                         <td data-label="Время">{{.StartTime}}</td>
                         <td data-label="Действия">
                             <form action="/api/tutor/lesson-action" method="POST" class="table-actions">
@@ -280,7 +280,7 @@
             <div class="requests-grid">
                 {{range .PendingLessons}}
                 <div class="request-card">
-                    <p class="request-meta"><strong>Ученик:</strong> {{.StudentName}} | <strong>Время:</strong> {{.Date}} в {{.StartTime}}</p>
+                    <p class="request-meta"><strong>Ученик:</strong> {{.StudentName}} | <strong>Время:</strong> {{.DayWeek}} в {{.StartTime}}</p>
                     <form action="/api/tutor/lesson-action" method="POST" class="actions-row">
                         <input type="hidden" name="lesson_id" value="{{.ID}}">
                         <button name="action" value="accept" class="btn btn-accept">Принять</button>
