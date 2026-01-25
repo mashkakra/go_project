@@ -11,11 +11,17 @@ import (
 	"time"
 )
 
+const templateDir = "../frontend/templates"
+
+func templatePath(name string) string {
+	return filepath.Join(templateDir, name)
+}
+
 // --- HTML ОБРАБОТЧИКИ ---
 
 // home отображает главную страницу
 func home(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("templates/index.html")
+	t, err := template.ParseFiles(templatePath("index.html"))
 	if err != nil {
 		http.Error(w, "Ошибка загрузки шаблона: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -49,7 +55,7 @@ func tutor(w http.ResponseWriter, r *http.Request) {
 		Tutors:   tutorsBySubject,
 	}
 
-	t, err := template.ParseFiles("templates/hello.html")
+	t, err := template.ParseFiles(templatePath("hello.html"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -59,9 +65,9 @@ func tutor(w http.ResponseWriter, r *http.Request) {
 
 // adminHandler отображает панель администратора
 func adminHandler(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("templates/admin.html")
+	t, err := template.ParseFiles(templatePath("admin.html"))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Ошибка загрузки шаблона: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	t.Execute(w, nil)
@@ -112,17 +118,24 @@ func submitApplicationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("Новая заявка: tutor_id=%d slot_id=%d name=%s phone=%s email=%s", tutorID, slotID, name, phone, email)
+
 	// Вызываем обновленную функцию (мы поправим её ниже в Repository)
 	// Передаем все данные, чтобы они не потерялись
-	err := createLessonRequest(tutorID, slotID, name, phone, email)
+	lessonID, err := createLessonRequest(tutorID, slotID, name, phone, email)
 	if err != nil {
-		fmt.Println("Ошибка БД:", err) // Для отладки в консоли сервера
+		log.Printf("Ошибка БД при создании заявки: %v", err)
 		http.Error(w, "Ошибка сохранения заявки", http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("Заявка сохранена: lesson_id=%d", lessonID)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":    "success",
+		"lesson_id": lessonID,
+		"message":   "Заявка отправлена",
+	})
 }
 
 // addTestSlotHandler — технический эндпоинт для тестов
@@ -145,7 +158,7 @@ func addTestSlotHandler(w http.ResponseWriter, r *http.Request) {
 
 // loginPage — отображение страницы входа
 func loginPage(w http.ResponseWriter, r *http.Request) {
-	t, _ := template.ParseFiles("templates/login.html")
+	t, _ := template.ParseFiles(templatePath("login.html"))
 	t.Execute(w, nil)
 }
 
@@ -206,13 +219,17 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   3600, // Живет 1 час
 	})
 	var role string
-	// Ищем пользователя по логину и паролю
+	var passwordHash string
+	// Ищем пользователя по логину
 	err := db.QueryRow(r.Context(),
-		"SELECT role FROM users WHERE username=$1 AND password=$2",
-		login, password).Scan(&role)
-
+		"SELECT password, role FROM users WHERE username=$1",
+		login).Scan(&passwordHash, &role)
 	if err != nil {
-		// Если не нашли — возвращаем на страницу входа с ошибкой
+		http.Redirect(w, r, "/login?error=auth", http.StatusSeeOther)
+		return
+	}
+
+	if !CheckPasswordHash(password, passwordHash) {
 		http.Redirect(w, r, "/login?error=auth", http.StatusSeeOther)
 		return
 	}
@@ -230,6 +247,16 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:   "session_user",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 // Кабинет администратора
 func adminDashboard(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем уведомления о паролях
@@ -244,12 +271,11 @@ func adminDashboard(w http.ResponseWriter, r *http.Request) {
 		"AllLessons":    lessons, // Ключ "AllLessons"
 	}
 
-	t, _ := template.ParseFiles("templates/admin_dashboard.html")
+	t, _ := template.ParseFiles(templatePath("admin_dashboard.html"))
 	t.Execute(w, data)
 }
 func renderTemplate(w http.ResponseWriter, tmplName string, data interface{}) {
-	// Укажите путь к папке с вашими HTML файлами
-	lp := filepath.Join("templates", tmplName)
+	lp := templatePath(tmplName)
 
 	tmpl, err := template.ParseFiles(lp)
 	if err != nil {

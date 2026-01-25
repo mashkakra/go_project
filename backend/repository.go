@@ -250,9 +250,13 @@ func getApplications(tutorUsername string) ([]map[string]interface{}, error) {
 
 // Функция для создания нового пользователя (выдача логина админом)
 func createUser(username, password, role string) error {
-	_, err := db.Exec(context.Background(),
+	hashedPassword, err := HashPassword(password)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(context.Background(),
 		"INSERT INTO users (username, password, role) VALUES ($1, $2, $3)",
-		username, password, role)
+		username, hashedPassword, role)
 	return err
 }
 
@@ -427,15 +431,17 @@ func bookLesson(studentID, tutorID, slotID int) error {
 	return tx.Commit(ctx)
 }
 
-func createLessonRequest(tutorID, slotID int, name, phone, email string) error {
+func createLessonRequest(tutorID, slotID int, name, phone, email string) (int, error) {
 	// ВАЖНО: Мы сохраняем контактные данные прямо в таблицу lessons.
 	// Убедитесь, что у вас есть эти колонки в таблице (student_name, student_phone, student_email)
 	query := `
         INSERT INTO lessons (tutor_id, timeslot_id, student_name, student_phone, student_email, status) 
         VALUES ($1, $2, $3, $4, $5, 'pending')
+        RETURNING id
     `
-	_, err := db.Exec(context.Background(), query, tutorID, slotID, name, phone, email)
-	return err
+	var lessonID int
+	err := db.QueryRow(context.Background(), query, tutorID, slotID, name, phone, email).Scan(&lessonID)
+	return lessonID, err
 }
 
 func acceptLesson(lessonID int) error {
@@ -737,10 +743,14 @@ func CreateStudentAccountFromLesson(lessonID int, login, password string) error 
 	}
 
 	// 2. Создаем запись в таблице users (роль 'student')
+	hashedPassword, err := HashPassword(password)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %v", err)
+	}
 	var userID int
 	err = tx.QueryRow(ctx,
 		"INSERT INTO users (username, password, role) VALUES ($1, $2, 'student') RETURNING id",
-		login, password).Scan(&userID)
+		login, hashedPassword).Scan(&userID)
 	if err != nil {
 		return fmt.Errorf("failed to create user: %v", err)
 	}

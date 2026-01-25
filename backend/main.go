@@ -15,6 +15,7 @@ func main() {
 	http.HandleFunc("/fortutor/", tutor)
 	http.HandleFunc("/admin/", adminHandler)
 	http.HandleFunc("/login", loginPage)
+	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/admin/dashboard", adminDashboard)
 	http.HandleFunc("/tutor/dashboard", tutorDashboard)
 	http.HandleFunc("/student/dashboard", studentDashboardHandler)
@@ -35,11 +36,11 @@ func main() {
 
 	// 3. Запуск сервера
 	port := ":8080"
-	log.Printf("🚀 Сервер запущен на http://localhost%s\n", port)
-	log.Printf("🎓 Запись к репетиторам: http://localhost%s/fortutor/\n", port)
+	log.Printf("Server started on http://localhost%s\n", port)
+	log.Printf("Booking a tutor: http://localhost%s/fortutor/\n", port)
 
 	if err := http.ListenAndServe(port, nil); err != nil {
-		log.Fatal("Ошибка запуска сервера: ", err)
+		log.Fatal("Error starting server: ", err)
 	}
 
 }
