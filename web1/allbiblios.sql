@@ -2,67 +2,33 @@ drop table if exists admin_notifications;
 drop table if exists students cascade;
 drop table if exists users cascade;
 drop table if exists lessons cascade;
-
-drop table if exists articles;
-
 drop table if exists tutors cascade;
-
 drop table if exists subjects cascade;
-
 drop table if exists tutor_subjects cascade;
-
 drop table if exists applications cascade;
-
-
-
 drop table if exists grades cascade;
-
 drop table if exists reviews cascade;
-
-
-
 drop table if exists tutor_grades cascade;
-
 drop table if exists time_slots cascade;
+drop table if exists slot_exceptions cascade;
 
 
-
--- Таблица пользователей для входа
-
-CREATE TABLE users (
-
-    id SERIAL PRIMARY KEY,
-
-    username TEXT UNIQUE NOT NULL,
-
-    password TEXT NOT NULL,
-
-    role TEXT NOT NULL -- 'admin', 'tutor', 'student'
-
-);
 
 
 
 -- Таблица для уведомлений админу
 
 CREATE TABLE admin_notifications (
-
     id SERIAL PRIMARY KEY,
-
     message TEXT NOT NULL,
-
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
 );
 
 -- Таблица предметов
 
 CREATE TABLE subjects (
-
     id SERIAL PRIMARY KEY,
-
     name VARCHAR(100) NOT NULL UNIQUE,
-
     description TEXT
 
 );
@@ -72,28 +38,17 @@ CREATE TABLE subjects (
 -- Таблица репетиторов
 
 CREATE TABLE tutors (
-
     id SERIAL PRIMARY KEY,
-
     first_name VARCHAR(50) NOT NULL,
-
     last_name VARCHAR(50) NOT NULL,
-
     email VARCHAR(100) UNIQUE,
-
     phone VARCHAR(20),
-
     bio TEXT,
-
     experience_years INTEGER DEFAULT 0,
-
     hourly_rate DECIMAL(10,2),
-
     is_active BOOLEAN DEFAULT true,
-
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	username varchar(12) UNIQUE NOT NULL
-
 );
 
 
@@ -101,13 +56,9 @@ CREATE TABLE tutors (
 -- Связующая таблица репетитор-предмет (многие ко многим)
 
 CREATE TABLE tutor_subjects (
-
     id SERIAL PRIMARY KEY,
-
     tutor_id INTEGER REFERENCES tutors(id) ON DELETE CASCADE,
-
     subject_id INTEGER REFERENCES subjects(id) ON DELETE CASCADE,
-
     UNIQUE(tutor_id, subject_id)
 
 );
@@ -117,11 +68,8 @@ CREATE TABLE tutor_subjects (
 -- Таблица классов (для каких классов преподает репетитор)
 
 CREATE TABLE grades (
-
     id SERIAL PRIMARY KEY,
-
     grade_name VARCHAR(20) NOT NULL UNIQUE, -- '1-4', '5-9', '10-11', 'студенты'
-
     description TEXT
 
 );
@@ -131,13 +79,9 @@ CREATE TABLE grades (
 -- Связующая таблица репетитор-классы
 
 CREATE TABLE tutor_grades (
-
     id SERIAL PRIMARY KEY,
-
     tutor_id INTEGER REFERENCES tutors(id) ON DELETE CASCADE,
-
     grade_id INTEGER REFERENCES grades(id) ON DELETE CASCADE,
-
     UNIQUE(tutor_id, grade_id)
 
 );
@@ -147,30 +91,82 @@ CREATE TABLE tutor_grades (
 -- Таблица свободных окон (расписание)
 
 CREATE TABLE time_slots (
-
     id SERIAL PRIMARY KEY,
-
     tutor_id INTEGER REFERENCES tutors(id) ON DELETE CASCADE,
-
-    date DATE NOT NULL,
-
+	day_of_week CHAR(2) NOT NULL,
+	date Date,
     start_time TIME NOT NULL,
-
     end_time TIME NOT NULL,
-
     is_available BOOLEAN DEFAULT true,
-
+	is_template BOOLEAN DEFAULT true,
     is_recurring BOOLEAN DEFAULT false, -- повторяющееся окно (например, каждую неделю)
-
     recurring_pattern VARCHAR(50), -- 'weekly', 'bi-weekly'
-
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 );
 
+CREATE TABLE slot_exceptions (
+    id SERIAL PRIMARY KEY,
+    timeslot_id INTEGER REFERENCES time_slots(id) ON DELETE CASCADE,
+    exception_date DATE NOT NULL, -- Конкретная дата (например, 2026-02-01)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(timeslot_id, exception_date) -- Нельзя создать два исключения на один день
+);
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT NOT NULL -- 'admin', 'tutor', 'student'
+);
+
+CREATE TABLE students (
+	id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    full_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	UNIQUE (id, user_id)
+);
 
 
--- Таблица отзывов о репетиторах
+
+CREATE TABLE IF NOT EXISTS lessons (
+    id SERIAL PRIMARY KEY,
+    tutor_id INTEGER REFERENCES tutors(id) ON DELETE CASCADE,
+    timeslot_id INTEGER REFERENCES time_slots(id) ON DELETE CASCADE,
+    student_name VARCHAR(100) NOT NULL,
+    student_phone VARCHAR(20) NOT NULL,
+    student_email VARCHAR(100),
+    -- Статусы: 'pending' (ожидает), 'scheduled' (подтвержден), 'declined' (отклонен)
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	student_id INT REFERENCES students(id) ON DELETE SET NULL
+);
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS comment TEXT;
+
+
+-- 1. Создаем таблицу профилей учеников
+
+
+
+
+
+
+
+-- Таблица для хранения заявок
+
+CREATE TABLE applications (
+
+    id SERIAL PRIMARY KEY,
+    tutor_id INTEGER REFERENCES tutors(id),
+    student_name VARCHAR(100) NOT NULL,
+    student_phone VARCHAR(20) NOT NULL,
+    student_email VARCHAR(100) NOT NULL,
+    status VARCHAR(20) DEFAULT 'new',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+);
 
 CREATE TABLE reviews (
 
@@ -188,9 +184,6 @@ CREATE TABLE reviews (
 
 );
 
-
-
--- Вставляем предметы
 
 INSERT INTO subjects (name, description) VALUES 
 
@@ -266,30 +259,6 @@ INSERT INTO tutors (first_name, last_name, email, phone, bio, experience_years, 
 
  12, 1600.00,'tutor_olga');
 
-
-
--- Таблица для хранения заявок
-
-CREATE TABLE applications (
-
-    id SERIAL PRIMARY KEY,
-
-    tutor_id INTEGER REFERENCES tutors(id),
-
-    student_name VARCHAR(100) NOT NULL,
-
-    student_phone VARCHAR(20) NOT NULL,
-
-    student_email VARCHAR(100) NOT NULL,
-
-    status VARCHAR(20) DEFAULT 'new',
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
-);
-
-
-
 -- Связываем репетиторов с предметами
 
 INSERT INTO tutor_subjects (tutor_id, subject_id) VALUES 
@@ -314,15 +283,16 @@ INSERT INTO tutor_grades (tutor_id, grade_id) VALUES
 (5, 2), (5, 3), (5, 4); -- Ольга: 5-9, 10-11, студенты
 
 -- Добавляем свободные окна
-INSERT INTO time_slots (tutor_id, date, start_time, end_time, is_recurring, recurring_pattern) VALUES 
-(1, '2024-01-15', '15:00', '16:30', true, 'weekly'),
-(1, '2024-01-15', '17:00', '18:30', true, 'weekly'),
-(2, '2024-01-16', '14:00', '15:30', true, 'weekly'),
-(2, '2024-01-16', '16:00', '17:30', true, 'weekly'),
-(3, '2024-01-17', '10:00', '11:30', true, 'weekly'),
-(3, '2024-01-17', '13:00', '14:30', true, 'weekly'),
-(4, '2024-01-18', '15:00', '16:30', true, 'weekly'),
-(5, '2024-01-19', '11:00', '12:30', true, 'weekly');
+INSERT INTO time_slots (tutor_id, day_of_week,date, start_time, end_time, is_recurring, recurring_pattern) VALUES 
+(1, 'ЧТ','2026-01-15', '15:00', '16:30', true, 'weekly'),
+(1, 'ЧТ','2026-01-15', '17:00', '18:30', true, 'weekly'),
+(2,'ПТ','2026-01-16', '14:00', '15:30', true, 'weekly'),
+(2, 'ПТ','2026-01-16', '16:00', '17:30', true, 'weekly'),
+(3, 'СБ','2026-01-17', '10:00', '11:30', true, 'weekly'),
+(3, 'СБ','2026-01-17', '13:00', '14:30', true, 'weekly'),
+(4, 'ВС','2026-01-18', '15:00', '16:30', true, 'weekly'),
+(5, 'ПН','2026-01-19', '11:00', '12:30', true, 'weekly');
+
 
 -- Добавляем отзывы
 INSERT INTO reviews (tutor_id, student_name, rating, comment) VALUES 
@@ -332,44 +302,17 @@ INSERT INTO reviews (tutor_id, student_name, rating, comment) VALUES
 (3, 'Анна Ковалева', 5, 'Занимаюсь с Марией уже год, значительно улучшила английский'),
 (4, 'Сергей Попов', 5, 'Алексей крутой! Научил программировать на Python с нуля');
 select * from time_slots;
---- 1. ТАБЛИЦА УРОКОВ (Вместо или в дополнение к applications) ---
--- Мы создаем её, чтобы привязать ученика к конкретному ТАЙМ-СЛОТУ
-CREATE TABLE IF NOT EXISTS lessons (
-    id SERIAL PRIMARY KEY,
-    tutor_id INTEGER REFERENCES tutors(id) ON DELETE CASCADE,
-    timeslot_id INTEGER REFERENCES time_slots(id) ON DELETE CASCADE,
-    student_name VARCHAR(100) NOT NULL,
-    student_phone VARCHAR(20) NOT NULL,
-    student_email VARCHAR(100),
-    -- Статусы: 'pending' (ожидает), 'scheduled' (подтвержден), 'declined' (отклонен)
-    status VARCHAR(20) DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
-ALTER TABLE lessons ADD COLUMN IF NOT EXISTS student_id INT REFERENCES students(id);
-
--- 1. Создаем таблицу профилей учеников
-CREATE TABLE IF NOT EXISTS students (
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    full_name VARCHAR(100) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 2. Добавляем колонку student_id в таблицу уроков
-
-ALTER TABLE lessons ADD COLUMN student_id INTEGER REFERENCES students(id) ON DELETE SET NULL;
-
---- 3. ТЕСТОВЫЕ ДАННЫЕ ДЛЯ ПРОВЕРКИ ---
--- Добавим одну тестовую заявку, которая "висит" на подтверждении
-INSERT INTO lessons (tutor_id, timeslot_id, student_name, student_phone, student_email, status)
-VALUES (1, 1, 'Алексей Тестовый', '+7-000-000-0000', 'test@test.com', 'pending');
-INSERT INTO users (username, password, role) VALUES 
-('admin_boss', 'admin777', 'admin'),             -- Главный администратор
-('tutor_petr', 'petr1234', 'tutor')
 select * from students;
-
+select * from lessons;
+select * from time_slots;
 SELECT l.id, l.student_name, t.last_name, ts.date
 FROM lessons l
 INNER JOIN tutors t ON l.tutor_id = t.id
 INNER JOIN time_slots ts ON l.timeslot_id = ts.id;
+select * from users;
+INSERT INTO users (username, password, role) 
+
+VALUES ('admin_boss', '$2a$10$iiZ0ZeVmLHl5TaC58VzFCOWFKuipwEA5nkxrZ4VoiKxnVTSA5GouC', 'admin');
+
+SELECT id, student_name, student_id FROM lessons WHERE student_id IS NULL;

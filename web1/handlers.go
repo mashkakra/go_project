@@ -168,8 +168,7 @@ func forgotPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Формируем текст сообщения для админа
-	message := "Запрос на восстановление пароля. Пользователь (логин): " + login +
-		". Напоминание: пароль должен состоять из 8 символов."
+	message := login
 
 	// Записываем уведомление в базу
 	_, err := db.Exec(r.Context(),
@@ -519,4 +518,47 @@ func adminCreateStudentHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Возвращаемся в админку
 	http.Redirect(w, r, "/admin/dashboard?success=access_granted", http.StatusSeeOther)
+}
+
+func adminCompleteResetHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		return
+	}
+
+	login := r.FormValue("login")
+	newPassword := r.FormValue("new_password")
+	notificationID := r.FormValue("notification_id")
+
+	// 1. Хешируем новый пароль
+	hashedPassword, err := HashPassword(newPassword)
+	if err != nil {
+		http.Error(w, "Ошибка хеширования", 500)
+		return
+	}
+
+	// 2. Выполняем обновление в транзакции
+	tx, err := db.Begin(r.Context())
+	if err != nil {
+		return
+	}
+	defer tx.Rollback(r.Context())
+
+	// Обновляем пароль в таблице users
+	_, err = tx.Exec(r.Context(), "UPDATE users SET password = $1 WHERE username = $2", string(hashedPassword), login)
+	if err != nil {
+		log.Printf("Ошибка смены пароля: %v", err)
+		return
+	}
+
+	// Удаляем отработанное уведомление
+	_, err = tx.Exec(r.Context(), "DELETE FROM admin_notifications WHERE id = $1", notificationID)
+	if err != nil {
+		log.Printf("Ошибка удаления уведомления: %v", err)
+		return
+	}
+
+	tx.Commit(r.Context())
+
+	http.Redirect(w, r, "/admin/dashboard?success=password_reset", http.StatusSeeOther)
 }

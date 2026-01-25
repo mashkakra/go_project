@@ -35,6 +35,7 @@ func main() {
 	http.HandleFunc("/api/tutor/confirm-reschedule", confirmRescheduleHandler)
 	http.HandleFunc("/api/tutor/create-and-reschedule", createAndRescheduleHandler)
 	http.HandleFunc("/api/admin/create-student", adminCreateStudentHandler)
+	http.HandleFunc("/api/admin/complete-reset", adminCompleteResetHandler)
 
 	// 3. Запуск сервера
 	port := ":8080"

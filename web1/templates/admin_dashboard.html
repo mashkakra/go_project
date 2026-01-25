@@ -279,6 +279,14 @@
             <h2>Запросы на восстановление пароля</h2>
             <ul class="notif-list">
                 {{range .Notifications}}
+                <div class="notification-item">
+                    <p>{{.Message}}</p>
+                    <form action="/api/admin/complete-reset" method="POST">
+                        <input type="hidden" name="login" value="{{.Message}}"> <input type="hidden" name="notification_id" value="{{.ID}}">
+                        <input type="text" name="new_password" placeholder="Новый пароль (8 симв.)" required minlength="8">
+                        <button type="submit" class="btn btn-primary">Установить и удалить уведомление</button>
+                    </form>
+                </div>
                 <li class="notif-item">
                     <span><strong>[{{.Time}}]</strong> {{.Message}}</span>
                     <button class="btn btn-ghost" type="button">Выполнено</button>
