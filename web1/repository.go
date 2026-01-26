@@ -294,7 +294,8 @@ func getStudentLessons(username string) ([]map[string]interface{}, error) {
 	var lessons []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var status, tutorName, startTime, dayWeek string
+		var status, tutorName, dayWeek string
+		var startTime time.Time
 		var date time.Time
 
 		if err := rows.Scan(&id, &status, &tutorName, &date, &startTime, &dayWeek); err != nil {
@@ -306,7 +307,7 @@ func getStudentLessons(username string) ([]map[string]interface{}, error) {
 			"ID":        id,
 			"TutorName": tutorName,
 			"Date":      date.Format("02.01.2006"),
-			"StartTime": startTime,
+			"StartTime": startTime.Format("15:04 MST"),
 			"Status":    status,
 			"DayWeek":   dayWeek,
 		})
@@ -342,7 +343,8 @@ func getTutorLessons(tutorUsername string) ([]map[string]interface{}, error) {
 	var lessons []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var name, startTime, dayWeek string
+		var name, dayWeek string
+		var startTime time.Time
 		var dateRaw interface{} // Используем interface{}, чтобы не упасть на типе DATE
 
 		if err := rows.Scan(&id, &name, &dateRaw, &startTime, &dayWeek); err != nil {
@@ -363,7 +365,7 @@ func getTutorLessons(tutorUsername string) ([]map[string]interface{}, error) {
 			"ID":          id,
 			"StudentName": name,
 			"Date":        dateStr,
-			"StartTime":   startTime,
+			"StartTime":   startTime.Format("15:04 MST"),
 			"DayWeek":     dayWeek,
 		})
 	}
@@ -508,7 +510,8 @@ func getConfirmedLessons(tutorUsername string) ([]map[string]interface{}, error)
 	var lessons []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var name, phone, startTime, dayWeek string
+		var name, phone, dayWeek string
+		var startTime time.Time
 		var date time.Time
 
 		// СТРОГО соблюдаем порядок из SELECT выше!
@@ -522,7 +525,7 @@ func getConfirmedLessons(tutorUsername string) ([]map[string]interface{}, error)
 			"StudentName":  name,
 			"StudentPhone": phone,
 			"Date":         date.Format("02.01.2006"),
-			"StartTime":    startTime,
+			"StartTime":    startTime.Format("15:04 MST"),
 			"Status":       "scheduled",
 			"DayWeek":      dayWeek,
 		})
@@ -555,16 +558,18 @@ func getAllLessonsForAdmin() ([]map[string]interface{}, error) {
 	var results []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var sName, sPhone, status, tutorName, scheduleDisplay, startTime, dayWeek string
+		var sName, sPhone, status, tutorName, scheduleDisplay, dayWeek string
+		var startime time.Time
 		var isRecurring bool
 		var studentID *int
 		var accLogin, accPassword *string
 
 		err := rows.Scan(
 			&id, &sName, &sPhone, &status, &studentID,
-			&tutorName, &dayWeek, &scheduleDisplay, &startTime, &isRecurring,
+			&tutorName, &dayWeek, &scheduleDisplay, &startime, &isRecurring,
 			&accLogin, &accPassword,
 		)
+		startTime := startime.Format("15:04 MST")
 		if err != nil {
 			return nil, err
 		}
@@ -634,17 +639,16 @@ func getAvailableSlotsForTutor(tutorUsername string) ([]map[string]interface{}, 
 	var slots []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var startTime string
+		var startTime time.Time
 		var date time.Time
 
 		if err := rows.Scan(&id, &date, &startTime); err != nil {
 			return nil, err
 		}
-
 		slots = append(slots, map[string]interface{}{
 			"ID":        id,
 			"Date":      date.Format("02.01.2006"),
-			"StartTime": startTime,
+			"StartTime": startTime.Format("15:04 MST"),
 		})
 	}
 

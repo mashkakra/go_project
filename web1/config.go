@@ -44,14 +44,14 @@ func initDB() {
 	// Создаем пул подключений (pgxpool оптимальнее одиночного подключения)
 	db, err = pgxpool.New(context.Background(), connStr)
 	if err != nil {
-		log.Fatal("❌ Ошибка создания пула подключений:", err)
+		log.Fatal("Ошибка создания пула подключений:", err)
 	}
 
 	// Проверяем физическое наличие связи с БД
 	err = db.Ping(context.Background())
 	if err != nil {
-		log.Fatal("❌ Не удалось подключиться к БД (Ping):", err)
+		log.Fatal("Не удалось подключиться к БД (Ping):", err)
 	}
 
-	log.Println("✅ Успешное подключение к PostgreSQL!")
+	log.Println("Успешное подключение к PostgreSQL!")
 }

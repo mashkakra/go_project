@@ -469,10 +469,13 @@
                         
                         // Оставляем обычную дату для передачи в функцию selectSlot (чтобы в alert была дата)
                         const dateNumeric = dateObj.toLocaleDateString('ru-RU');
-
+                        let timeFormatted = slot.start_time;
+                        if (slot.start_time.length >= 8) { // Если есть секунды "14:30:00"
+                            timeFormatted = slot.start_time.substring(0, 5); // Берем "14:30"
+                        }
                         // В тексте кнопки теперь weekdayCapitalized вместо dateNumeric
                         return `<button class="slot-btn" onclick="selectSlot(${tutor.id}, ${slot.id}, '${tutor.full_name}', '${dateNumeric} ${slot.start_time}')">
-                                    ${weekdayCapitalized}, ${slot.start_time}
+                                    ${weekdayCapitalized}, ${timeFormatted}
                                 </button>`;
                     }).join(' ');
                 } else {

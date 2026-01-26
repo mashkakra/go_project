@@ -39,8 +39,8 @@ func main() {
 
 	// 3. Запуск сервера
 	port := ":8080"
-	log.Printf("🚀 Сервер запущен на http://localhost%s\n", port)
-	log.Printf("🎓 Запись к репетиторам: http://localhost%s/fortutor/\n", port)
+	log.Printf("Сервер запущен на http://localhost%s\n", port)
+	log.Printf("Запись к репетиторам: http://localhost%s/fortutor/\n", port)
 
 	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatal("Ошибка запуска сервера: ", err)
